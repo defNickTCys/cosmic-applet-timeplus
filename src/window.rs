@@ -4,6 +4,7 @@
 use chrono::{Datelike, Timelike};
 use cosmic::iced_futures::stream;
 use cosmic::widget::Id;
+use cosmic::widget::segmented_button;
 use cosmic::{
     Apply, Element, Task, app,
     applet::{cosmic_panel_config::PanelAnchor, menu_button, padded_control},
@@ -20,7 +21,7 @@ use cosmic::{
     surface, theme,
     widget::{
         Button, Grid, Space, autosize, button, container, divider, grid, horizontal_space, icon,
-        rectangle_tracker::*, text,
+        rectangle_tracker::*, segmented_control, text,
     },
 };
 use logind_zbus::manager::ManagerProxy;
@@ -38,8 +39,16 @@ use icu::{
         input::{Date, DateTime, Time},
         options::TimePrecision,
     },
-    locale::{Locale, preferences::extensions::unicode::keywords::HourCycle},
+    locale::Locale,
 };
+
+// Tab selection
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tab {
+    Calendar,
+    Weather,
+    Timer,
+}
 
 static AUTOSIZE_MAIN_ID: LazyLock<Id> = LazyLock::new(|| Id::new("autosize-main"));
 
@@ -86,6 +95,9 @@ pub struct Window {
     config: TimeAppletConfig,
     show_seconds_tx: watch::Sender<bool>,
     locale: Locale,
+    // Tab system
+    selected_tab: Tab,
+    tab_model: segmented_button::SingleSelectModel,
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +114,7 @@ pub enum Message {
     ConfigChanged(TimeAppletConfig),
     TimezoneUpdate(String),
     Surface(surface::Action),
+    TabSelected(segmented_button::Entity),
 }
 
 impl Window {
@@ -296,6 +309,99 @@ impl Window {
             .align_y(Alignment::Center),
         )
     }
+
+    // Calendar tab view
+    fn view_calendar(&self) -> Element<'_, Message> {
+        let datetime = self.create_datetime(&self.date_selected);
+        let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
+
+        let date = text(
+            DateTimeFormatter::try_new(prefs, fieldsets::YMD::long())
+                .unwrap()
+                .format(&datetime)
+                .to_string(),
+        )
+        .size(18);
+        
+        let day_of_week = text::body(
+            DateTimeFormatter::try_new(prefs, fieldsets::E::long())
+                .unwrap()
+                .format(&datetime)
+                .to_string(),
+        );
+
+        let month_controls = row![
+            button::icon(icon::from_name("go-previous-symbolic"))
+                .padding(8)
+                .on_press(Message::PreviousMonth),
+            button::icon(icon::from_name("go-next-symbolic"))
+                .padding(8)
+                .on_press(Message::NextMonth)
+        ]
+        .spacing(8);
+
+        let calendar = self.calendar_grid();
+
+        column![
+            row![
+                column![date, day_of_week],
+                Space::with_width(Length::Fill),
+                month_controls,
+            ]
+            .align_y(Alignment::Center)
+            .padding([12, 20]),
+            calendar.padding([0, 12].into()),
+        ]
+        .into()
+    }
+
+    // Weather tab view (stub)
+    fn view_weather(&self) -> Element<'_, Message> {
+        container(
+            column![
+                text("🌤️ Weather").size(20),
+                Space::with_height(Length::Fixed(20.0)),
+                text::body("Weather integration coming soon!"),
+                text::body("Location: São Paulo, BR"),
+                Space::with_height(Length::Fixed(10.0)),
+                text::body("Features:"),
+                text::body("  • Current conditions"),
+                text::body("  • Temperature"),
+                text::body("  • Forecast"),
+            ]
+            .padding(20)
+            .spacing(8)
+            .align_x(Alignment::Center)
+        )
+        .width(Length::Fixed(350.0))
+        .height(Length::Fixed(350.0))
+        .center_x(Length::Fill)
+        .into()
+    }
+
+    // Timer tab view (stub)
+    fn view_timer(&self) -> Element<'_, Message> {
+        container(
+            column![
+                text("⏱️ Timer").size(20),
+                Space::with_height(Length::Fixed(20.0)),
+                text::body("Pomodoro timer coming soon!"),
+                Space::with_height(Length::Fixed(10.0)),
+                text::body("Features:"),
+                text::body("  • Countdown timer"),
+                text::body("  • Quick presets (5, 15, 25 min)"),
+                text::body("  • Desktop notifications"),
+                text::body("  • Persistent across sessions"),
+            ]
+            .padding(20)
+            .spacing(8)
+            .align_x(Alignment::Center)
+        )
+        .width(Length::Fixed(350.0))
+        .height(Length::Fixed(350.0))
+        .center_x(Length::Fill)
+        .into()
+    }
 }
 
 impl cosmic::Application for Window {
@@ -319,6 +425,19 @@ impl cosmic::Application for Window {
         // Synch `show_seconds` from the config within the time subscription
         let (show_seconds_tx, _) = watch::channel(true);
 
+        // Initialize tab model with icons
+        let mut tab_model = segmented_button::Model::builder()
+            .insert(|b| b.icon(icon::from_name("com.system76.CosmicAppletTime-symbolic")).text(fl!("calendar")).data(Tab::Calendar))
+            .insert(|b| b.icon(icon::from_name("weather-clear-symbolic")).text(fl!("weather")).data(Tab::Weather))
+            .insert(|b| b.icon(icon::from_name("alarm-symbolic")).text(fl!("timer")).data(Tab::Timer))
+            .build();
+        
+        // Activate first tab
+        let first = tab_model.iter().next();
+        if let Some(entity) = first {
+            tab_model.activate(entity);
+        }
+
         (
             Self {
                 core,
@@ -333,6 +452,8 @@ impl cosmic::Application for Window {
                 config: TimeAppletConfig::default(),
                 show_seconds_tx,
                 locale,
+                selected_tab: Tab::Calendar,
+                tab_model,
             },
             Task::none(),
         )
@@ -650,6 +771,13 @@ impl cosmic::Application for Window {
 
                 self.update(Message::Tick)
             }
+            Message::TabSelected(entity) => {
+                self.tab_model.activate(entity);
+                if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    self.selected_tab = *tab;
+                }
+                Task::none()
+            }
             Message::Surface(a) => {
                 return cosmic::task::message(cosmic::Action::Cosmic(
                     cosmic::app::Action::Surface(a),
@@ -683,57 +811,43 @@ impl cosmic::Application for Window {
             } else {
                 button.into()
             },
-            AUTOSIZE_MAIN_ID.clone(),
+                    AUTOSIZE_MAIN_ID.clone(),
         )
         .into()
     }
+
 
     fn view_window(&self, _id: window::Id) -> Element<'_, Message> {
         let Spacing {
             space_xxs, space_s, ..
         } = theme::active().cosmic().spacing;
 
-        let datetime = self.create_datetime(&self.date_selected);
-        let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
-
-        let date = text(
-            DateTimeFormatter::try_new(prefs, fieldsets::YMD::long())
-                .unwrap()
-                .format(&datetime)
-                .to_string(),
-        )
-        .size(18);
-        let day_of_week = text::body(
-            DateTimeFormatter::try_new(prefs, fieldsets::E::long())
-                .unwrap()
-                .format(&datetime)
-                .to_string(),
+        // Tab selector (no style = default dark background)
+        let tabs = padded_control(
+            segmented_control::horizontal(&self.tab_model)
+                .spacing(4)  // Reduce icon-text spacing
+                .on_activate(Message::TabSelected)
         );
 
-        let month_controls = row![
-            button::icon(icon::from_name("go-previous-symbolic"))
-                .padding(8)
-                .on_press(Message::PreviousMonth),
-            button::icon(icon::from_name("go-next-symbolic"))
-                .padding(8)
-                .on_press(Message::NextMonth)
-        ]
-        .spacing(8);
+        // Select view based on active tab
+        let tab_content = match self.selected_tab {
+            Tab::Calendar => self.view_calendar(),
+            Tab::Weather => self.view_weather(),
+            Tab::Timer => self.view_timer(),
+        };
 
-        let calendar = self.calendar_grid();
-
-        let content_list = column![
-            row![
-                column![date, day_of_week],
-                Space::with_width(Length::Fill),
-                month_controls,
-            ]
-            .align_y(Alignment::Center)
-            .padding([12, 20]),
-            calendar.padding([0, 12].into()),
+        // Footer with settings button
+        let footer = column![
             padded_control(divider::horizontal::default()).padding([space_xxs, space_s]),
             menu_button(text::body(fl!("datetime-settings")))
                 .on_press(Message::OpenDateTimeSettings),
+        ];
+
+        let content_list = column![
+            tabs,
+            padded_control(divider::horizontal::default()).padding([space_xxs, space_s]),
+            tab_content,
+            footer,
         ]
         .padding([8, 0]);
 

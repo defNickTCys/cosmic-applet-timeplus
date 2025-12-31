@@ -1,14 +1,59 @@
 # Time Plus - Applet COSMIC
 
+<p align="center">
+  <img src="timerplus.png" alt="Interface do Time Plus" width="440">
+</p>
+
 **Um applet rico em recursos para o [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** que estende a funcionalidade padrão de hora/data/calendário com informações meteorológicas integradas e timer pomodoro.
 
 <p align="center">
   <img src="https://img.shields.io/badge/COSMIC-Desktop-orange?style=for-the-badge" alt="COSMIC Desktop"/>
   <img src="https://img.shields.io/badge/Licença-GPL--3.0-blue?style=for-the-badge" alt="Licença GPL-3.0"/>
   <img src="https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge&logo=rust" alt="Rust 2021"/>
+  <img src="https://img.shields.io/badge/Start-Vibe%20Coding-purple?style=for-the-badge" alt="Vibe Coding"/>
 </p>
 
 [🇺🇸 Read in English](README.md)
+
+---
+
+## 🎨 Anatomia Visual
+
+O design do **Time Plus** segue estritamente os **Human Interface Guidelines (HIG)** do COSMIC Desktop, garantindo uma aparência nativa e integrada.
+
+### 1. Integração com o Painel
+A parte do applet que reside permanentemente na barra superior.
+
+*   **Estilo:** Botão plano (`Button::Text`) que se integra à superfíce do painel.
+    *   *Inativo:* Fundo transparente, texto `OnBackground`.
+    *   *Ativo:* Fundo destacado indicando menu aberto.
+*   **Conteúdo:** Data e Hora completas (ex: "31 de dezembro às 03:59").
+    *   **Formato:** Auto-detectado do locale do sistema (12h/24h).
+    *   **Tipografia:** Inter Semi-bold, ajustada à altura do painel.
+
+### 2. Interface Principal (Popup)
+Container flutuante com cantos arredondados (Corner Radius 12px) e fundo padrão `Surface`.
+
+#### A. Navegação de Topo (Tab System)
+Localizada no topo absoluto do container.
+*   **Componente:** `segmented_control::horizontal` com alternância exclusiva.
+*   **Estilo:**
+    *   *Ativo:* Fundo destacado (Accent Color), texto e ícone em alto contraste.
+    *   *Inativo:* Fundo transparente, elementos em cinza (`OnSurfaceVariant`).
+*   **Abas:**
+    *   📅 **Calendário:** Ícone `com.system76.CosmicAppletTime-symbolic`
+    *   🌤️ **Clima:** Ícone `weather-clear-symbolic`
+    *   ⏰ **Timer:** Ícone `alarm-symbolic`
+
+#### B. Área de Conteúdo (Calendário)
+*   **Cabeçalho:** Mês/Ano em destaque (`text::Title`, tamanho 18) e controles de navegação (`button::icon`) à direita.
+*   **Grade de Dias:**
+    *   Dias da semana ("seg", "ter"...) em texto menor (`text::Caption`).
+    *   Dia Atual destacado com **Círculo Perfeito** preenchido com a cor de destaque (Cyan) e texto em alto contraste.
+
+#### C. Rodapé
+*   **Divisor:** Linha horizontal sutil separando o conteúdo.
+*   **Configurações:** Botão estilo `menu_button` ("Configurações de data, hora e calendário...") que preenche a largura e reage ao passar o mouse.
 
 ---
 
@@ -19,24 +64,33 @@
 - Navegação por meses
 - Destaque do dia atual
 - Corresponde exatamente ao applet de hora padrão do COSMIC
+- **Novo:** Acessível via aba dedicada "Calendário"
+
+### 🌤️ Integração Meteorológica *(Em Progresso)*
+- Acessível via aba "Clima"
+- Visualização placeholder implementada
+- *Em Breve:* Clima atual, previsões, configuração de localização
+
+### ⏱️ Timer Pomodoro *(Em Progresso)*
+- Acessível via aba "Timer"
+- Visualização placeholder implementada
+- *Em Breve:* Lógica de contagem, presets, notificações
 
 ### 📝 Lembretes Rápidos *(Em Breve)*
 - Adicione lembretes simples baseados em data
-- Hora opcional para notificações
 - Indicadores visuais no calendário
 - Notificações no desktop quando vencer
 
-### 🌤️ Integração Meteorológica *(Em Breve)*
-- Exibição do clima atual
-- Temperatura e condições
-- Previsões baseadas em localização
-- Coordenadas configuráveis
+---
 
-### ⏱️ Timer Pomodoro *(Em Breve)*
-- Intervalos de trabalho/pausa personalizáveis
-- Notificações na área de trabalho ao concluir
-- Presets rápidos (5min, 25min, etc.)
-- Estado persistente entre sessões
+## 🤖 Filosofia de Desenvolvimento
+
+Este projeto é um experimento em **"Vibe Coding"** (Desenvolvimento Assistido) - uma colaboração entre a criatividade humana e a precisão da IA.
+
+- **Humano**: Thiago Cysneiros ([@defNickTCys](https://github.com/defNickTCys)) - Arquitetura, Decisões de Design, Testes
+- **IA**: Google Antigravity IDE & Claude 4.5 Sonnet - Implementação, Refatoração, Documentação
+
+O objetivo é demonstrar como ferramentas avançadas de IA podem acelerar o desenvolvimento de desktop moderno mantendo altos padrões de qualidade de código e seguindo padrões arquitetônicos estritos.
 
 ---
 
@@ -51,7 +105,7 @@
 
 ```bash
 # Clone o repositório
-git clone https://github.com/SEU_USUARIO/cosmic-applet-timeplus
+git clone https://github.com/defNickTCys/cosmic-applet-timeplus
 cd cosmic-applet-timeplus
 
 # Compile e instale
@@ -107,12 +161,12 @@ cosmic-applet-timeplus/
 ├── src/
 │   ├── main.rs       # Ponto de entrada
 │   ├── lib.rs        # Declarações de módulos
-│   ├── window.rs     # Lógica principal do applet
+│   ├── window.rs     # Lógica principal (Abas e Views)
 │   ├── config.rs     # Structs de configuração
 │   ├── localize.rs   # Sistema i18n
 │   ├── time.rs       # Helpers do calendário
-│   ├── weather.rs    # Módulo de clima (WIP)
-│   └── timer.rs      # Módulo de timer (WIP)
+│   ├── weather.rs    # Módulo de clima (stub)
+│   └── timer.rs      # Módulo de timer (stub)
 ├── i18n/             # Traduções (61 idiomas)
 ├── data/             # Arquivos desktop
 └── dev.sh            # Script helper de desenvolvimento
@@ -157,9 +211,10 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] Exibição no painel com auto-locale
 
 ### Fase 2: Sistema de Abas 🚧
-- [ ] Implementar abas segmentadas (Calendário | Clima | Timer)
-- [ ] Extrair calendário para visualização dedicada
-- [ ] Garantir altura consistente entre abas
+- [/] Implementar abas segmentadas (Calendário | Clima | Timer) (Bugs visuais menores)
+- [x] Extrair calendário para visualização dedicada
+- [/] Estilo visual consistente (Ícones + Texto) (Precisa de refinamento)
+- [x] Garantir altura consistente entre abas
 
 ### Fase 3: Módulo de Clima 📍
 - [ ] Integração com API OpenWeatherMap
@@ -216,20 +271,20 @@ Baseado no [cosmic-applet-time](https://github.com/pop-os/cosmic-applets) da Sys
 
 ## 🙏 Agradecimentos
 
+- **Thiago Cysneiros (defNickTCys)** - Líder do Projeto
+- **Google Antigravity & Claude 3.5 Sonnet** - Assistência via IA
 - **System76** pelo COSMIC Desktop e o applet de hora base
 - Time **Pop!_OS** pelo framework libcosmic
-- **Iced** pelo toolkit GUI
-- A comunidade **Rust**
 
 ---
 
 ## 📫 Suporte & Contato
 
-- **Issues**: [GitHub Issues](https://github.com/SEU_USUARIO/cosmic-applet-timeplus/issues)
-- **Discussões**: [GitHub Discussions](https://github.com/SEU_USUARIO/cosmic-applet-timeplus/discussions)
+- **Issues**: [GitHub Issues](https://github.com/defNickTCys/cosmic-applet-timeplus/issues)
+- **Discussões**: [GitHub Discussions](https://github.com/defNickTCys/cosmic-applet-timeplus/discussions)
 
 ---
 
 <p align="center">
-Feito com ❤️ para a comunidade COSMIC Desktop
+Feito com ❤️ e 🤖 para a comunidade COSMIC Desktop
 </p>
