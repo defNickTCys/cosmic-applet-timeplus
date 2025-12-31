@@ -117,22 +117,6 @@ pub enum Message {
 }
 
 impl Window {
-    /// Helper to create ICU DateTime from chrono date
-    fn create_datetime<D: Datelike>(&self, date: &D) -> icu::datetime::input::DateTime<icu::calendar::Gregorian> {
-        use icu::datetime::input::{Date, DateTime, Time};
-        DateTime {
-            date: Date::try_new_gregorian(date.year(), date.month() as u8, date.day() as u8)
-                .unwrap(),
-            time: Time::try_new(
-                self.now.hour() as u8,
-                self.now.minute() as u8,
-                self.now.second() as u8,
-                0,
-            )
-            .unwrap(),
-        }
-    }
-
     /// Format with strftime if non-empty and ignore errors.
     ///
     /// Do not use to_string(). The formatter panics on invalid specifiers.
@@ -160,7 +144,7 @@ impl Window {
         } else {
             let mut elements = Vec::new();
             let date = self.now.naive_local();
-            let datetime = self.create_datetime(&date);
+            let datetime = crate::time::create_datetime(&date, &self.now);
             let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
             // Let ICU auto-detect hour cycle from locale preferences
 
@@ -218,7 +202,7 @@ impl Window {
         let formatted_date = if let Some(strftime) = self.maybe_strftime() {
             strftime
         } else {
-            let datetime = self.create_datetime(&self.now);
+            let datetime = crate::time::create_datetime(&self.now, &self.now);
             let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
             // Let ICU auto-detect hour cycle from locale preferences
 

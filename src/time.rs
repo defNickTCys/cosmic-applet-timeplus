@@ -20,6 +20,11 @@ use icu::{
 
 use crate::window::Message;
 
+// Calendar layout constants
+const CALENDAR_DAYS: usize = 42; // 6 weeks × 7 days
+const DAY_BUTTON_SIZE: f32 = 44.0; // COSMIC HIG standard button size
+const HEADER_PADDING: [u16; 2] = [12, 20]; // Vertical, Horizontal padding
+
 /// Gets the first date that will be visible on the calendar
 pub fn get_calendar_first(year: i32, month: u32, from_weekday: Weekday) -> NaiveDate {
     let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
@@ -28,7 +33,7 @@ pub fn get_calendar_first(year: i32, month: u32, from_weekday: Weekday) -> Naive
 }
 
 /// Creates an ICU DateTime from a chrono date and time components
-fn create_datetime<D: Datelike, T: Timelike>(date: &D, now: &T) -> DateTime<icu::calendar::Gregorian> {
+pub fn create_datetime<D: Datelike, T: Timelike>(date: &D, now: &T) -> DateTime<icu::calendar::Gregorian> {
     DateTime {
         date: Date::try_new_gregorian(date.year(), date.month() as u8, date.day() as u8)
             .unwrap(),
@@ -58,8 +63,8 @@ fn date_button(day: u32, is_month: bool, is_day: bool, is_today: bool) -> Button
             .center(Length::Fill),
     )
     .class(style)
-    .height(Length::Fixed(44.0))
-    .width(Length::Fixed(44.0));
+    .height(Length::Fixed(DAY_BUTTON_SIZE))
+    .width(Length::Fixed(DAY_BUTTON_SIZE));
 
     if is_month {
         button.on_press(Message::SelectDay(day))
@@ -95,14 +100,14 @@ fn calendar_grid<'a, T: Timelike>(
         calendar = calendar.push(
             text::caption(weekday.format(&datetime).to_string())
                 .apply(container)
-                .center_x(Length::Fixed(44.0)),
+                .center_x(Length::Fixed(DAY_BUTTON_SIZE)),
         );
         first_day_of_week = first_day_of_week.succ();
     }
     calendar = calendar.insert_row();
 
     let mut day_iter = first_day.iter_days();
-    for i in 0..42 {
+    for i in 0..CALENDAR_DAYS {
         if i > 0 && i % 7 == 0 {
             calendar = calendar.insert_row();
         }
@@ -164,7 +169,7 @@ pub fn view_calendar<'a, T: Timelike>(
             month_controls,
         ]
         .align_y(Alignment::Center)
-        .padding([12, 20]),
+        .padding(HEADER_PADDING),
         calendar.padding([0, 12].into()),
     ]
     .into()
