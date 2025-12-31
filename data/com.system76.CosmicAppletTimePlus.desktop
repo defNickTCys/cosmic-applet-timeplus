@@ -1,0 +1,16 @@
+[Desktop Entry]
+Name=Time Plus (Data, Hora, Clima e Timer)
+Name[pt]=Time Plus (Data, Hora, Clima e Timer)
+Name[pt_BR]=Time Plus (Data, Hora, Clima e Timer)
+Name[en]=Time Plus (Date, Time, Weather & Timer)
+Type=Application
+Exec=/home/cysneiros/.cargo/bin/cosmic-applet-timeplus
+Terminal=false
+Categories=COSMIC;
+Keywords=COSMIC;Iced;
+Icon=com.system76.CosmicAppletTime-symbolic
+NoDisplay=true
+X-CosmicApplet=true
+X-CosmicShrinkable=true
+X-HostWaylandDisplay=true
+X-CosmicHoverPopup=Auto
