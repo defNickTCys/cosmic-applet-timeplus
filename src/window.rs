@@ -6,7 +6,7 @@ use cosmic::iced_futures::stream;
 use cosmic::widget::Id;
 use cosmic::widget::segmented_button;
 use cosmic::{
-    Apply, Element, Task, app,
+    Element, Task, app,
     applet::{cosmic_panel_config::PanelAnchor, menu_button, padded_control},
     cctk::sctk::reexports::calloop,
     cosmic_theme::Spacing,
@@ -20,7 +20,7 @@ use cosmic::{
     iced_widget::{Column, horizontal_rule},
     surface, theme,
     widget::{
-        Button, Grid, Space, autosize, button, container, divider, grid, horizontal_space, icon,
+        Space, autosize, button, container, divider, horizontal_space, icon,
         rectangle_tracker::*, segmented_control, text,
     },
 };
@@ -29,14 +29,13 @@ use std::sync::LazyLock;
 use timedate_zbus::TimeDateProxy;
 use tokio::{sync::watch, time};
 
-use crate::{config::TimeAppletConfig, fl, time::get_calendar_first};
+use crate::{config::TimeAppletConfig, fl};
 use cosmic::applet::token::subscription::{
     TokenRequest, TokenUpdate, activation_token_subscription,
 };
 use icu::{
     datetime::{
         DateTimeFormatter, DateTimeFormatterPreferences, fieldsets,
-        input::{Date, DateTime, Time},
         options::TimePrecision,
     },
     locale::Locale,
@@ -118,7 +117,9 @@ pub enum Message {
 }
 
 impl Window {
-    fn create_datetime<D: Datelike>(&self, date: &D) -> DateTime<icu::calendar::Gregorian> {
+    /// Helper to create ICU DateTime from chrono date
+    fn create_datetime<D: Datelike>(&self, date: &D) -> icu::datetime::input::DateTime<icu::calendar::Gregorian> {
+        use icu::datetime::input::{Date, DateTime, Time};
         DateTime {
             date: Date::try_new_gregorian(date.year(), date.month() as u8, date.day() as u8)
                 .unwrap(),
@@ -130,50 +131,6 @@ impl Window {
             )
             .unwrap(),
         }
-    }
-
-    fn calendar_grid(&self) -> Grid<'_, Message> {
-        let mut calendar: Grid<'_, Message> = grid().width(Length::Fill);
-        let mut first_day_of_week = chrono::Weekday::try_from(self.config.first_day_of_week)
-            .unwrap_or(chrono::Weekday::Sun);
-
-        let first_day = get_calendar_first(
-            self.date_selected.year(),
-            self.date_selected.month(),
-            first_day_of_week,
-        );
-
-        let day_iter = first_day.iter_days();
-        let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
-        let weekday = DateTimeFormatter::try_new(prefs, fieldsets::E::short()).unwrap();
-
-        for date in day_iter.take(7) {
-            let datetime = self.create_datetime(&date);
-            calendar = calendar.push(
-                text::caption(weekday.format(&datetime).to_string())
-                    .apply(container)
-                    .center_x(Length::Fixed(44.0)),
-            );
-            first_day_of_week = first_day_of_week.succ();
-        }
-        calendar = calendar.insert_row();
-
-        let mut day_iter = first_day.iter_days();
-        for i in 0..42 {
-            if i > 0 && i % 7 == 0 {
-                calendar = calendar.insert_row();
-            }
-
-            let date = day_iter.next().unwrap();
-            let is_month = date.month() == self.date_selected.month()
-                && date.year_ce() == self.date_selected.year_ce();
-            let is_day = date.day() == self.date_selected.day() && is_month;
-            let is_today = date == self.date_today;
-
-            calendar = calendar.push(date_button(date.day(), is_month, is_day, is_today));
-        }
-
-        calendar
     }
 
     /// Format with strftime if non-empty and ignore errors.
@@ -312,47 +269,13 @@ impl Window {
 
     // Calendar tab view
     fn view_calendar(&self) -> Element<'_, Message> {
-        let datetime = self.create_datetime(&self.date_selected);
-        let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
-
-        let date = text(
-            DateTimeFormatter::try_new(prefs, fieldsets::YMD::long())
-                .unwrap()
-                .format(&datetime)
-                .to_string(),
+        crate::time::view_calendar(
+            &self.locale,
+            self.date_selected,
+            self.date_today,
+            &self.now,
+            self.config.first_day_of_week,
         )
-        .size(18);
-        
-        let day_of_week = text::body(
-            DateTimeFormatter::try_new(prefs, fieldsets::E::long())
-                .unwrap()
-                .format(&datetime)
-                .to_string(),
-        );
-
-        let month_controls = row![
-            button::icon(icon::from_name("go-previous-symbolic"))
-                .padding(8)
-                .on_press(Message::PreviousMonth),
-            button::icon(icon::from_name("go-next-symbolic"))
-                .padding(8)
-                .on_press(Message::NextMonth)
-        ]
-        .spacing(8);
-
-        let calendar = self.calendar_grid();
-
-        column![
-            row![
-                column![date, day_of_week],
-                Space::with_width(Length::Fill),
-                month_controls,
-            ]
-            .align_y(Alignment::Center)
-            .padding([12, 20]),
-            calendar.padding([0, 12].into()),
-        ]
-        .into()
     }
 
     // Weather tab view (stub)
@@ -862,27 +785,4 @@ impl cosmic::Application for Window {
     }
 }
 
-fn date_button(day: u32, is_month: bool, is_day: bool, is_today: bool) -> Button<'static, Message> {
-    let style = if is_day {
-        button::ButtonClass::Suggested
-    } else if is_today {
-        button::ButtonClass::Standard
-    } else {
-        button::ButtonClass::Text
-    };
 
-    let button = button::custom(
-        text::body(format!("{day}"))
-            .apply(container)
-            .center(Length::Fill),
-    )
-    .class(style)
-    .height(Length::Fixed(44.0))
-    .width(Length::Fixed(44.0));
-
-    if is_month {
-        button.on_press(Message::SelectDay(day))
-    } else {
-        button
-    }
-}
