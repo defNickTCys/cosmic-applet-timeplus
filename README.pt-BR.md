@@ -20,6 +20,12 @@
 - Destaque do dia atual
 - Corresponde exatamente ao applet de hora padrão do COSMIC
 
+### 📝 Lembretes Rápidos *(Em Breve)*
+- Adicione lembretes simples baseados em data
+- Hora opcional para notificações
+- Indicadores visuais no calendário
+- Notificações no desktop quando vencer
+
 ### 🌤️ Integração Meteorológica *(Em Breve)*
 - Exibição do clima atual
 - Temperatura e condições
@@ -167,7 +173,14 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [ ] Notificações no desktop
 - [ ] Mini widget de timer no painel
 
-### Fase 5: Refinamento 💎
+### Fase 5: Lembretes Rápidos 📝
+- [ ] Armazenamento de lembretes baseados em data
+- [ ] Indicadores visuais no calendário
+- [ ] Interface adicionar/editar/excluir
+- [ ] Notificações desktop quando vencer
+- [ ] Auto-limpeza de lembretes antigos
+
+### Fase 6: Refinamento 💎
 - [ ] Interface de configurações
 - [ ] Atalhos de teclado
 - [ ] Melhorias de acessibilidade

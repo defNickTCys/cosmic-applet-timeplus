@@ -20,6 +20,12 @@
 - Today highlighting
 - Matches default COSMIC time applet exactly
 
+### 📝 Quick Reminders *(Coming Soon)*
+- Add simple date-based reminders
+- Optional time for notifications
+- Visual indicators on calendar
+- Desktop notifications when due
+
 ### 🌤️ Weather Integration *(Coming Soon)*
 - Current weather display
 - Temperature and conditions
@@ -167,7 +173,14 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [ ] Desktop notifications
 - [ ] Mini timer widget on panel
 
-### Phase 5: Polish 💎
+### Phase 5: Quick Reminders 📝
+- [ ] Date-based reminder storage
+- [ ] Visual indicators on calendar
+- [ ] Add/edit/delete UI
+- [ ] Desktop notifications when due
+- [ ] Auto-cleanup old reminders
+
+### Phase 6: Polish 💎
 - [ ] Settings UI
 - [ ] Keyboard shortcuts
 - [ ] Accessibility improvements
