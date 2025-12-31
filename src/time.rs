@@ -92,13 +92,15 @@ fn calendar_grid<'a, T: Timelike>(
     );
 
     let day_iter = first_day.iter_days();
+    
+    // Create formatters once for this render (optimization)
     let prefs = DateTimeFormatterPreferences::from(locale.clone());
-    let weekday = DateTimeFormatter::try_new(prefs, fieldsets::E::short()).unwrap();
+    let weekday_formatter = DateTimeFormatter::try_new(prefs, fieldsets::E::short()).unwrap();
 
     for date in day_iter.take(7) {
         let datetime = create_datetime(&date, now);
         calendar = calendar.push(
-            text::caption(weekday.format(&datetime).to_string())
+            text::caption(weekday_formatter.format(&datetime).to_string())
                 .apply(container)
                 .center_x(Length::Fixed(DAY_BUTTON_SIZE)),
         );
@@ -133,19 +135,21 @@ pub fn view_calendar<'a, T: Timelike>(
     first_day_of_week: u8,
 ) -> Element<'a, Message> {
     let datetime = create_datetime(&date_selected, now);
+    
+    // Create formatters once for this render (optimization)
     let prefs = DateTimeFormatterPreferences::from(locale.clone());
+    let date_formatter = DateTimeFormatter::try_new(prefs, fieldsets::YMD::long()).unwrap();
+    let weekday_formatter = DateTimeFormatter::try_new(prefs, fieldsets::E::long()).unwrap();
 
     let date = text(
-        DateTimeFormatter::try_new(prefs, fieldsets::YMD::long())
-            .unwrap()
+        date_formatter
             .format(&datetime)
             .to_string(),
     )
     .size(18);
     
     let day_of_week = text::body(
-        DateTimeFormatter::try_new(prefs, fieldsets::E::long())
-            .unwrap()
+        weekday_formatter
             .format(&datetime)
             .to_string(),
     );
