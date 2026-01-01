@@ -1,7 +1,7 @@
 # Time Plus - Cosmic Applet
 
 <p align="center">
-  <img src="timerplus.png" alt="Time Plus Interface" width="440">
+  <img src="data/com.system76.CosmicAppletTimeplus.svg" alt="Time Plus Logo" width="120">
 </p>
 
 **A feature-rich time applet for [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** that extends the default time/date/calendar functionality with integrated weather information and pomodoro timer.
@@ -17,9 +17,55 @@
 
 ---
 
+## 📸 Screenshots
+
+*All screenshots captured from **v0.1.0** running on COSMIC Desktop (Fedora Linux 43)*
+
+<details>
+<summary>🔲 Tab Navigation System</summary>
+
+<p align="center">
+  <img src="screenshots/tabs.png" alt="Tab Navigation" width="600"/>
+</p>
+
+Segmented button navigation showing Calendar, Weather, and Timer tabs.
+</details>
+
+<details>
+<summary>📅 Calendar Tab</summary>
+
+<p align="center">
+  <img src="screenshots/calendar.png" alt="Calendar Tab" width="400"/>
+</p>
+
+Full calendar grid with month navigation and today highlighting.
+</details>
+
+<details>
+<summary>🌤️ Weather Tab (Placeholder)</summary>
+
+<p align="center">
+  <img src="screenshots/weather.png" alt="Weather Tab" width="400"/>
+</p>
+
+Weather module ready for API integration.
+</details>
+
+<details>
+<summary>⏱️ Timer Tab (Placeholder)</summary>
+
+<p align="center">
+  <img src="screenshots/timer.png" alt="Timer Tab" width="400"/>
+</p>
+
+Timer module ready for countdown logic.
+</details>
+
+---
+
 ## 🎨 Visual Anatomy
 
-The **Time Plus** design strict follows the **Human Interface Guidelines (HIG)** of COSMIC Desktop, ensuring a native and integrated look.
+The **Time Plus** design strictly follows the **Human Interface Guidelines (HIG)** of COSMIC Desktop, ensuring a native and integrated look.
 
 ### 1. Panel Integration
 The part of the applet that resides permanently on the top bar.
@@ -36,7 +82,7 @@ Floating container with rounded corners (Corner Radius 12px) and standard `Surfa
 
 #### A. Top Navigation (Tab System)
 Located at the absolute top of the container.
-*   **Component:** `segmented_control::horizontal` with exclusive toggle.
+*   **Component:** `segmented_button::horizontal` with `SingleSelectModel`.
 *   **Style:**
     *   *Active:* Highlighted background (Accent Color), high-contrast text and icon.
     *   *Inactive:* Transparent background, gray elements (`OnSurfaceVariant`).
@@ -59,27 +105,32 @@ Located at the absolute top of the container.
 
 ## ✨ Features
 
-### 📅 Calendar (System Standard)
-- Full calendar grid with proper localization
-- Month navigation
-- Today highlighting
-- Matches default COSMIC time applet exactly
-- **New:** Accessible via dedicated "Calendar" tab
+### 🏗️ Modular Architecture
+- **Separate modules** for Calendar, Weather, and Timer
+- Clean separation of concerns
+- Easy to extend and maintain
+- Follows COSMIC applet patterns
 
-### 🌤️ Weather Integration *(In Progress)*
-- Accessible via "Weather" tab
-- Placeholder view implemented
+### 📅 Calendar
+- Full calendar grid with proper localization
+- Month navigation with ICU formatters
+- Today highlighting with accent color
+- Optimized rendering with formatter caching
+- Accessible via dedicated "Calendar" tab
+
+### 🌤️ Weather *(Placeholder)*
+- Modular `weather.rs` implementation
+- Consistent header + content structure
+- Standard COSMIC divider
+- Ready for API integration
 - *Coming Soon:* Current weather, forecasts, location config
 
-### ⏱️ Pomodoro Timer *(In Progress)*
-- Accessible via "Timer" tab
-- Placeholder view implemented
-- *Coming Soon:* Countdown logic, presets, notifications
-
-### 📝 Quick Reminders *(Coming Soon)*
-- Add simple date-based reminders
-- Visual indicators on calendar
-- Desktop notifications
+### ⏱️ Timer *(Placeholder)*
+- Modular `timer.rs` implementation
+- Matches calendar visual consistency
+- Standard COSMIC patterns
+- Ready for countdown logic
+- *Coming Soon:* Pomodoro presets, notifications, persistence
 
 ---
 
@@ -108,12 +159,19 @@ The goal is to demonstrate how advanced AI tools can accelerate modern desktop d
 git clone https://github.com/defNickTCys/cosmic-applet-timeplus
 cd cosmic-applet-timeplus
 
-# Build and install
-cargo install --path .
+# Build release binary
+cargo build --release
+
+# Install to system
+sudo install -Dm755 target/release/cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
+sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.desktop /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
+sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
 
 # Restart COSMIC panel
 killall cosmic-panel
 ```
+
+**Note**: For development, use `./dev.sh dev` for fast iteration without system installation.
 
 ### Adding to Panel
 
@@ -197,16 +255,29 @@ cosmic-applet-timeplus/
 ├── src/
 │   ├── main.rs       # Entry point
 │   ├── lib.rs        # Module declarations
-│   ├── window.rs     # Main applet logic (Tabs & Views)
+│   ├── window.rs     # Main applet (tab orchestration)
 │   ├── config.rs     # Configuration structs
 │   ├── localize.rs   # i18n system
-│   ├── time.rs       # Calendar rendering & helpers
-│   ├── weather.rs    # Weather module (stub)
-│   └── timer.rs      # Timer module (stub)
+│   ├── time.rs       # Calendar module (view + logic)
+│   ├── weather.rs    # Weather module (placeholder)
+│   └── timer.rs      # Timer module (placeholder)
 ├── i18n/             # Translations (61 languages)
+│   └── */cosmic_applet_timeplus.ftl
+├── screenshots/      # UI screenshots
+│   ├── calendar.png
+│   ├── weather.png
+│   └── timer.png
 ├── data/             # Desktop files
-└── dev.sh            # Development helper script
+├── dev.sh            # Development helper script
+├── create_i18n.sh    # i18n file generator
+└── TRANSLATIONS.md   # Translation status
 ```
+
+**Key Architectural Decisions:**
+- **Modular Design**: Each tab has its own module (`time.rs`, `weather.rs`, `timer.rs`)
+- **Separation of Concerns**: `window.rs` orchestrates, modules implement
+- **No Code Duplication**: Uses `cosmic::applet::padded_control` and standard patterns
+- **Consistent Structure**: All placeholders match calendar's header + content layout
 
 ### Performance Optimizations
 
@@ -221,15 +292,28 @@ Recent improvements include:
 
 ## 🌍 Localization
 
-Time Plus supports **61 languages** out of the box, using the same localization system as the official COSMIC time applet.
+Time Plus supports **61 languages** out of the box!
 
-To add or update translations:
+**Translation Status:**
+- ✅ **8 languages** fully translated (de, es-ES, fr, it, ru, ja, zh-CN, ko)
+- 📝 **53 languages** using English fallback
+- 🤝 **Community contributions welcome!**
+
+📋 **See [TRANSLATIONS.md](TRANSLATIONS.md) for:**
+- Complete language list with native speaker counts
+- Translation guidelines
+- How to contribute
+- Priority languages
+
+**Quick Translation:**
 ```bash
-# Edit the appropriate language file
-nano i18n/pt-BR/cosmic_applet_timeplus.ftl
+# Edit your language file
+nano i18n/{language}/cosmic_applet_timeplus.ftl
 
-# Rebuild and test
-./dev.sh run
+# Test locally
+./dev.sh dev
+
+# Submit PR with your translation!
 ```
 
 ---
@@ -243,11 +327,13 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] Desktop integration
 - [x] Panel display with auto-locale
 
-### Phase 2: Tab System 🚧
-- [/] Implement segmented tabs (Calendar | Weather | Timer) (Minor visual bugs)
-- [x] Extract calendar to dedicated view
-- [/] Consistent visual style (Icons + Text) (Needs refinement)
-- [x] Ensure consistent height across tabs
+### Phase 2: Tab System ✅
+- [x] Implement segmented tabs (Calendar | Weather | Timer)
+- [x] Extract calendar to `time.rs` module
+- [x] Create `weather.rs` and `timer.rs` modules
+- [x] Consistent visual style with standard COSMIC patterns
+- [x] Content-driven height (no fixed dimensions)
+- [x] Standard dividers with proper spacing
 
 ### Phase 3: Weather Module 📍
 - [ ] OpenWeatherMap API integration

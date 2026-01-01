@@ -41,12 +41,11 @@ case "$1" in
         ;;
     
     dev)
-        echo "⚡ Fast dev build (debug mode)..."
-        cargo build && \
-        killall cosmic-panel && \
-        sleep 0.5 && \
-        cp target/debug/cosmic-applet-timeplus ~/.cargo/bin/
-        echo "✅ Dev build installed!"
+        echo "⚡ Fast dev iteration (no Git updates)..."
+        cargo build --release && \
+        cargo install --path . --locked && \
+        killall cosmic-panel
+        echo "✅ Dev iteration complete!"
         ;;
     
     build)
@@ -114,7 +113,7 @@ case "$1" in
         echo "  check        - Quick code verification (no compilation)"
         echo "  test         - Run unit tests"
         echo "  clippy       - Run Rust linter"
-        echo "  dev          - Fast debug build + install + reload (~15s)"
+        echo "  dev          - Fast iteration: build + install (--locked, no Git updates)"
         echo ""
         echo "📦 Release commands:"
         echo "  build        - Build optimized release binary"

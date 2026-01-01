@@ -41,28 +41,3 @@ impl Default for TimeAppletConfig {
     }
 }
 
-/// Our extended configuration for weather
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-pub struct WeatherConfig {
-    #[serde(default = "default_lat")]
-    pub latitude: String,
-    #[serde(default = "default_long")]
-    pub longitude: String,
-}
-
-impl Default for WeatherConfig {
-    fn default() -> Self {
-        Self {
-            latitude: default_lat(),
-            longitude: default_long(),
-        }
-    }
-}
-
-fn default_lat() -> String {
-    "-23.5505".to_string()
-}
-
-fn default_long() -> String {
-    "-46.6333".to_string()
-}

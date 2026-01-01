@@ -18,10 +18,10 @@ use cosmic::{
         window,
     },
     iced_widget::{Column, horizontal_rule},
-    surface, theme,
+    theme,
     widget::{
-        Space, autosize, button, container, divider, horizontal_space, icon,
-        rectangle_tracker::*, segmented_control, text,
+        autosize, button, container, divider, horizontal_space, icon,
+        rectangle_tracker::*, text,
     },
 };
 use logind_zbus::manager::ManagerProxy;
@@ -112,8 +112,7 @@ pub enum Message {
     Token(TokenUpdate),
     ConfigChanged(TimeAppletConfig),
     TimezoneUpdate(String),
-    Surface(surface::Action),
-    TabSelected(segmented_button::Entity),
+    TabActivated(segmented_button::Entity),
 }
 
 impl Window {
@@ -262,52 +261,14 @@ impl Window {
         )
     }
 
-    // Weather tab view (stub)
+    // Weather tab view
     fn view_weather(&self) -> Element<'_, Message> {
-        container(
-            column![
-                text("🌤️ Weather").size(20),
-                Space::with_height(Length::Fixed(20.0)),
-                text::body("Weather integration coming soon!"),
-                text::body("Location: São Paulo, BR"),
-                Space::with_height(Length::Fixed(10.0)),
-                text::body("Features:"),
-                text::body("  • Current conditions"),
-                text::body("  • Temperature"),
-                text::body("  • Forecast"),
-            ]
-            .padding(20)
-            .spacing(8)
-            .align_x(Alignment::Center)
-        )
-        .width(Length::Fixed(350.0))
-        .height(Length::Fixed(350.0))
-        .center_x(Length::Fill)
-        .into()
+        crate::weather::view_weather()
     }
 
-    // Timer tab view (stub)
+    // Timer tab view
     fn view_timer(&self) -> Element<'_, Message> {
-        container(
-            column![
-                text("⏱️ Timer").size(20),
-                Space::with_height(Length::Fixed(20.0)),
-                text::body("Pomodoro timer coming soon!"),
-                Space::with_height(Length::Fixed(10.0)),
-                text::body("Features:"),
-                text::body("  • Countdown timer"),
-                text::body("  • Quick presets (5, 15, 25 min)"),
-                text::body("  • Desktop notifications"),
-                text::body("  • Persistent across sessions"),
-            ]
-            .padding(20)
-            .spacing(8)
-            .align_x(Alignment::Center)
-        )
-        .width(Length::Fixed(350.0))
-        .height(Length::Fixed(350.0))
-        .center_x(Length::Fill)
-        .into()
+        crate::timer::view_timer()
     }
 }
 
@@ -332,18 +293,27 @@ impl cosmic::Application for Window {
         // Synch `show_seconds` from the config within the time subscription
         let (show_seconds_tx, _) = watch::channel(true);
 
-        // Initialize tab model with icons
+        // Initialize tab model (using segmented_button for tab navigation)
         let mut tab_model = segmented_button::Model::builder()
-            .insert(|b| b.icon(icon::from_name("com.system76.CosmicAppletTime-symbolic")).text(fl!("calendar")).data(Tab::Calendar))
-            .insert(|b| b.icon(icon::from_name("weather-clear-symbolic")).text(fl!("weather")).data(Tab::Weather))
-            .insert(|b| b.icon(icon::from_name("alarm-symbolic")).text(fl!("timer")).data(Tab::Timer))
+            .insert(|b| {
+                b.text(fl!("calendar"))
+                    .icon(icon::from_name("com.system76.CosmicAppletTime-symbolic"))
+                    .data(Tab::Calendar)
+            })
+            .insert(|b| {
+                b.text(fl!("weather"))
+                    .icon(icon::from_name("weather-clear-symbolic"))
+                    .data(Tab::Weather)
+            })
+            .insert(|b| {
+                b.text(fl!("timer"))
+                    .icon(icon::from_name("alarm-symbolic"))
+                    .data(Tab::Timer)
+            })
             .build();
         
         // Activate first tab
-        let first = tab_model.iter().next();
-        if let Some(entity) = first {
-            tab_model.activate(entity);
-        }
+        tab_model.activate_position(0);
 
         (
             Self {
@@ -678,17 +648,12 @@ impl cosmic::Application for Window {
 
                 self.update(Message::Tick)
             }
-            Message::TabSelected(entity) => {
+            Message::TabActivated(entity) => {
                 self.tab_model.activate(entity);
                 if let Some(tab) = self.tab_model.data::<Tab>(entity) {
                     self.selected_tab = *tab;
                 }
                 Task::none()
-            }
-            Message::Surface(a) => {
-                return cosmic::task::message(cosmic::Action::Cosmic(
-                    cosmic::app::Action::Surface(a),
-                ));
             }
         }
     }
@@ -729,12 +694,14 @@ impl cosmic::Application for Window {
             space_xxs, space_s, ..
         } = theme::active().cosmic().spacing;
 
-        // Tab selector (no style = default dark background)
-        let tabs = padded_control(
-            segmented_control::horizontal(&self.tab_model)
-                .spacing(4)  // Reduce icon-text spacing
-                .on_activate(Message::TabSelected)
-        );
+        // Tab navigation - matches system separator width with padding
+        let tabs = container(
+            segmented_button::horizontal(&self.tab_model)
+                .button_spacing(space_xxs)  // Spacing between icon and text
+                .button_padding([space_xxs, space_s, space_xxs, space_s])  // Symmetric padding (top, right, bottom, left)
+                .on_activate(Message::TabActivated)
+        )
+        .padding([0, space_s]);  // Horizontal padding to match separator
 
         // Select view based on active tab
         let tab_content = match self.selected_tab {
@@ -752,7 +719,6 @@ impl cosmic::Application for Window {
 
         let content_list = column![
             tabs,
-            padded_control(divider::horizontal::default()).padding([space_xxs, space_s]),
             tab_content,
             footer,
         ]

@@ -1,7 +1,7 @@
 # Time Plus - Applet COSMIC
 
 <p align="center">
-  <img src="timerplus.png" alt="Interface do Time Plus" width="440">
+  <img src="data/com.system76.CosmicAppletTimeplus.svg" alt="Logo Time Plus" width="120">
 </p>
 
 **Um applet rico em recursos para o [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** que estende a funcionalidade padrão de hora/data/calendário com informações meteorológicas integradas e timer pomodoro.
@@ -14,6 +14,52 @@
 </p>
 
 [🇺🇸 Read in English](README.md)
+
+---
+
+## 📸 Capturas de Tela
+
+*Todas as capturas de tela da **v0.1.0** executando no COSMIC Desktop (Fedora Linux 43)*
+
+<details>
+<summary>🔲 Sistema de Navegação por Abas</summary>
+
+<p align="center">
+  <img src="screenshots/tabs.png" alt="Navegação por Abas" width="600"/>
+</p>
+
+Navegação com botões segmentados mostrando abas Calendário, Clima e Timer.
+</details>
+
+<details>
+<summary>📅 Aba Calendário</summary>
+
+<p align="center">
+  <img src="screenshots/calendar.png" alt="Aba Calendário" width="400"/>
+</p>
+
+Grade de calendário completa com navegação por mês e destaque do dia atual.
+</details>
+
+<details>
+<summary>🌤️ Aba Clima (Placeholder)</summary>
+
+<p align="center">
+  <img src="screenshots/weather.png" alt="Aba Clima" width="400"/>
+</p>
+
+Módulo de clima pronto para integração de API.
+</details>
+
+<details>
+<summary>⏱️ Aba Timer (Placeholder)</summary>
+
+<p align="center">
+  <img src="screenshots/timer.png" alt="Aba Timer" width="400"/>
+</p>
+
+Módulo de timer pronto para lógica de contagem.
+</details>
 
 ---
 
@@ -36,7 +82,7 @@ Container flutuante com cantos arredondados (Corner Radius 12px) e fundo padrão
 
 #### A. Navegação de Topo (Tab System)
 Localizada no topo absoluto do container.
-*   **Componente:** `segmented_control::horizontal` com alternância exclusiva.
+*   **Componente:** `segmented_button::horizontal` com `SingleSelectModel`.
 *   **Estilo:**
     *   *Ativo:* Fundo destacado (Accent Color), texto e ícone em alto contraste.
     *   *Inativo:* Fundo transparente, elementos em cinza (`OnSurfaceVariant`).
@@ -59,27 +105,32 @@ Localizada no topo absoluto do container.
 
 ## ✨ Recursos
 
-### 📅 Calendário (Padrão do Sistema)
-- Grade de calendário completa com localização adequada
-- Navegação por meses
-- Destaque do dia atual
-- Corresponde exatamente ao applet de hora padrão do COSMIC
-- **Novo:** Acessível via aba dedicada "Calendário"
+### 🏗️ Arquitetura Modular
+- **Módulos separados** para Calendário, Clima e Timer
+- Separação clara de responsabilidades
+- Fácil de estender e manter
+- Segue padrões de applets COSMIC
 
-### 🌤️ Integração Meteorológica *(Em Progresso)*
-- Acessível via aba "Clima"
-- Visualização placeholder implementada
+### 📅 Calendário
+- Grade de calendário completa com localização adequada
+- Navegação por meses com formatadores ICU
+- Destaque do dia atual com cor de destaque
+- Renderização otimizada com cache de formatadores
+- Acessível via aba dedicada "Calendário"
+
+### 🌤️ Clima *(Placeholder)*
+- Implementação modular em `weather.rs`
+- Estrutura consistente de cabeçalho + conteúdo
+- Divisor padrão COSMIC
+- Pronto para integração de API
 - *Em Breve:* Clima atual, previsões, configuração de localização
 
-### ⏱️ Timer Pomodoro *(Em Progresso)*
-- Acessível via aba "Timer"
-- Visualização placeholder implementada
-- *Em Breve:* Lógica de contagem, presets, notificações
-
-### 📝 Lembretes Rápidos *(Em Breve)*
-- Adicione lembretes simples baseados em data
-- Indicadores visuais no calendário
-- Notificações no desktop quando vencer
+### ⏱️ Timer *(Placeholder)*
+- Implementação modular em `timer.rs`
+- Consistência visual com calendário
+- Padrões COSMIC padrão
+- Pronto para lógica de contagem
+- *Em Breve:* Presets Pomodoro, notificações, persistência
 
 ---
 
@@ -108,12 +159,19 @@ O objetivo é demonstrar como ferramentas avançadas de IA podem acelerar o dese
 git clone https://github.com/defNickTCys/cosmic-applet-timeplus
 cd cosmic-applet-timeplus
 
-# Compile e instale
-cargo install --path .
+# Compile o binário release
+cargo build --release
+
+# Instale no sistema
+sudo install -Dm755 target/release/cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
+sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.desktop /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
+sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
 
 # Reinicie o painel COSMIC
 killall cosmic-panel
 ```
+
+**Nota**: Para desenvolvimento, use `./dev.sh dev` para iteração rápida sem instalação no sistema.
 
 ### Adicionando ao Painel
 
@@ -197,16 +255,29 @@ cosmic-applet-timeplus/
 ├── src/
 │   ├── main.rs       # Ponto de entrada
 │   ├── lib.rs        # Declarações de módulos
-│   ├── window.rs     # Lógica principal (Abas e Views)
+│   ├── window.rs     # Applet principal (orquestração de abas)
 │   ├── config.rs     # Structs de configuração
 │   ├── localize.rs   # Sistema i18n
-│   ├── time.rs       # Renderização de calendário e helpers
-│   ├── weather.rs    # Módulo de clima (stub)
-│   └── timer.rs      # Módulo de timer (stub)
+│   ├── time.rs       # Módulo calendário (view + lógica)
+│   ├── weather.rs    # Módulo clima (placeholder)
+│   └── timer.rs      # Módulo timer (placeholder)
 ├── i18n/             # Traduções (61 idiomas)
+│   └── */cosmic_applet_timeplus.ftl
+├── screenshots/      # Capturas de tela da UI
+│   ├── calendar.png
+│   ├── weather.png
+│   └── timer.png
 ├── data/             # Arquivos desktop
-└── dev.sh            # Script helper de desenvolvimento
+├── dev.sh            # Script helper de desenvolvimento
+├── create_i18n.sh    # Gerador de arquivos i18n
+└── TRANSLATIONS.md   # Status de traduções
 ```
+
+**Decisões Arquiteturais Chave:**
+- **Design Modular**: Cada aba tem seu próprio módulo (`time.rs`, `weather.rs`, `timer.rs`)
+- **Separação de Responsabilidades**: `window.rs` orquestra, módulos implementam
+- **Sem Duplicação de Código**: Usa `cosmic::applet::padded_control` e padrões padrão
+- **Estrutura Consistente**: Todos os placeholders seguem o layout cabeçalho + conteúdo do calendário
 
 ### Otimizações de Performance
 
@@ -255,11 +326,13 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] Integração com desktop
 - [x] Exibição no painel com auto-locale
 
-### Fase 2: Sistema de Abas 🚧
-- [/] Implementar abas segmentadas (Calendário | Clima | Timer) (Bugs visuais menores)
-- [x] Extrair calendário para visualização dedicada
-- [/] Estilo visual consistente (Ícones + Texto) (Precisa de refinamento)
-- [x] Garantir altura consistente entre abas
+### Fase 2: Sistema de Abas ✅
+- [x] Implementar abas segmentadas (Calendário | Clima | Timer)
+- [x] Extrair calendário para módulo `time.rs`
+- [x] Criar módulos `weather.rs` e `timer.rs`
+- [x] Estilo visual consistente com padrões COSMIC padrão
+- [x] Altura definida pelo conteúdo (sem dimensões fixas)
+- [x] Divisores padrão com espaçamento adequado
 
 ### Fase 3: Módulo de Clima 📍
 - [ ] Integração com API OpenWeatherMap

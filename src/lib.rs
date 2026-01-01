@@ -4,6 +4,8 @@
 mod config;
 mod localize;
 mod time;
+mod weather;
+mod timer;
 mod window;
 
 use window::Window;
