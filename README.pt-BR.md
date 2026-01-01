@@ -1,7 +1,11 @@
 # Time Plus - Applet COSMIC
 
 <p align="center">
-  <img src="data/com.system76.CosmicAppletTimeplus.svg" alt="Logo Time Plus" width="120">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="com.system76.CosmicAppletTimePlusDark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="com.system76.CosmicAppletTimePlusLight.svg">
+    <img src="com.system76.CosmicAppletTimePlusLight.svg" alt="Logo Time Plus" width="120">
+  </picture>
 </p>
 
 **Um applet rico em recursos para o [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** que estende a funcionalidade padrão de hora/data/calendário com informações meteorológicas integradas e timer pomodoro.

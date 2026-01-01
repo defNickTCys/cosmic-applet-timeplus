@@ -25,13 +25,13 @@ install -Dm755 cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
 
 # Install desktop file
 echo -e "${YELLOW}→${NC} Installing desktop file..."
-install -Dm644 com.system76.CosmicAppletTimeplus.desktop \
-    /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
+install -Dm644 com.system76.CosmicAppletTimePlus.desktop \
+    /usr/share/applications/com.system76.CosmicAppletTimePlus.desktop
 
 # Install icon
 echo -e "${YELLOW}→${NC} Installing icon..."
-install -Dm644 com.system76.CosmicAppletTimeplus.svg \
-    /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
+install -Dm644 com.system76.CosmicAppletTimePlus.svg \
+    /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimePlus.svg
 
 # Update icon cache
 if command -v gtk-update-icon-cache &> /dev/null; then

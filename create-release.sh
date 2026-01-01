@@ -22,8 +22,8 @@ mkdir -p "${RELEASE_DIR}"
 # Copy files
 echo "→ Copying files..."
 cp target/release/cosmic-applet-timeplus "${RELEASE_DIR}/"
-cp data/com.system76.CosmicAppletTimeplus.desktop "${RELEASE_DIR}/"
-cp data/com.system76.CosmicAppletTimeplus.svg "${RELEASE_DIR}/"
+cp data/com.system76.CosmicAppletTimePlus.desktop "${RELEASE_DIR}/"
+cp data/com.system76.CosmicAppletTimePlus.svg "${RELEASE_DIR}/"
 cp install.sh "${RELEASE_DIR}/"
 
 # Create README for release
@@ -36,8 +36,8 @@ Installation:
 
 Manual Installation:
   sudo install -Dm755 cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
-  sudo install -Dm644 com.system76.CosmicAppletTimeplus.desktop /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
-  sudo install -Dm644 com.system76.CosmicAppletTimeplus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
+  sudo install -Dm644 com.system76.CosmicAppletTimePlus.desktop /usr/share/applications/com.system76.CosmicAppletTimePlus.desktop
+  sudo install -Dm644 com.system76.CosmicAppletTimePlus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimePlus.svg
   killall cosmic-panel
 
 More info: https://github.com/defNickTCys/cosmic-applet-timeplus
