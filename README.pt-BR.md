@@ -1,5 +1,3 @@
-# Time Plus - Applet COSMIC
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="com.system76.CosmicAppletTimePlusDark.svg">
@@ -7,6 +5,8 @@
     <img src="com.system76.CosmicAppletTimePlusLight.svg" alt="Logo Time Plus" width="120">
   </picture>
 </p>
+
+# Time Plus - Applet COSMIC
 
 **Um applet rico em recursos para o [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** que estende a funcionalidade padrão de hora/data/calendário com informações meteorológicas integradas e timer pomodoro.
 
@@ -23,7 +23,7 @@
 
 ## 📸 Capturas de Tela
 
-*Todas as capturas de tela da **v0.1.0** executando no COSMIC Desktop (Fedora Linux 43)*
+*Todas as capturas de tela da **v0.1.1** executando no COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Sistema de Navegação por Abas</summary>
@@ -140,29 +140,47 @@ Localizada no topo absoluto do container.
 
 ## 🏗️ Arquitetura de Software
 
-### Padrão de Orquestrador Central
+### Padrão Mensageiro Neutro + Orquestrador
 
-O Time Plus segue uma arquitetura limpa de **Orquestrador + Módulos Especialistas**:
+O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + Módulos Especialistas** introduzida na v0.1.1:
 
 ```
 ┌─────────────────────────────────────────────┐
-│         window.rs (Orquestrador)            │
+│         lib.rs (Mensageiro Neutro)          │
+│  • Enum Message global (sem dependências)   │
+│  • Enum Tab compartilhado entre módulos     │
+│  • Previne dependências circulares          │
+└─────────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────┐
+│           window.rs (Orquestrador)          │
 │  • Gerencia ciclo de vida da janela popup   │
 │  • Controla sistema de navegação por abas   │
 │  • Delega para módulos especialistas        │
-│  • SEM lógica de negócio                    │
+│  • SEM lógica de negócio (369 linhas)       │
 └─────────────────────────────────────────────┘
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-   ┌────────┐  ┌────────┐  ┌────────┐
-   │ time.rs│  │weather │  │ timer  │
-   │        │  │  .rs   │  │  .rs   │
-   │ State  │  │ State  │  │ State  │
-   │ Message│  │ Message│  │ Message│
-   │ update │  │ update │  │ update │
-   │ view   │  │ view   │  │ view   │
-   └────────┘  └────────┘  └────────┘
+                     │
+         ┌───────────┼───────────┬──────────────┐
+         ▼           ▼           ▼              ▼
+    ┌──────────┐ ┌────────┐ ┌────────┐  ┌──────────────┐
+    │calendar  │ │weather │ │ timer  │  │subscriptions │
+    │  .rs     │ │  .rs   │ │  .rs   │  │    .rs       │
+    │          │ │        │ │        │  │              │
+    │ Estado   │ │ Estado │ │ Estado │  │ Tick tempo   │
+    │ Mensagem │ │Mensagem│ │Mensagem│  │ Timezone     │
+    │ update   │ │ update │ │ update │  │ Wake-sleep   │
+    │ view     │ │ view   │ │ view   │  │              │
+    └──────────┘ └────────┘ └────────┘  └──────────────┘
+         │
+         ▼
+    ┌──────────┐
+    │  time.rs │
+    │          │
+    │ Formatador│
+    │  Painel  │
+    │          │
+    └──────────┘
 ```
 
 ### Padrão de Envelope de Mensagens
@@ -170,15 +188,15 @@ O Time Plus segue uma arquitetura limpa de **Orquestrador + Módulos Especialist
 Cada módulo possui seu próprio **sistema de mensagens isolado**:
 
 ```rust
-// Envelope de mensagens globais em window.rs
+// Envelope de mensagens globais em lib.rs (Mensageiro Neutro)
 pub enum Message {
-    Calendar(time::CalendarMessage),  // Envelope para calendário
-    Weather(weather::WeatherMessage), // Envelope para clima
-    Timer(timer::TimerMessage),       // Envelope para timer
+    Calendar(calendar::CalendarMessage),  // Envelope para calendário
+    Weather(weather::WeatherMessage),     // Envelope para clima
+    Timer(timer::TimerMessage),           // Envelope para timer
     // ... apenas mensagens de orquestração
 }
 
-// Mensagens específicas do módulo em time.rs
+// Mensagens específicas do módulo em calendar.rs
 pub enum CalendarMessage {
     SelectDay(u32),
     PreviousMonth,
@@ -198,6 +216,7 @@ impl CalendarState {
 - ✅ **Manutenibilidade**: Mudanças em um módulo não afetam outros
 - ✅ **Testabilidade**: Módulos podem ser testados independentemente
 - ✅ **Escalabilidade**: Fácil adicionar novos módulos
+- ✅ **Sem Dependências Circulares**: Mensageiro Neutro quebra ciclos de dependência
 
 ### Princípios de Design
 
