@@ -1,5 +1,3 @@
-# Time Plus - Cosmic Applet
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="com.system76.CosmicAppletTimePlusDark.svg">
@@ -7,6 +5,8 @@
     <img src="com.system76.CosmicAppletTimePlusLight.svg" alt="Time Plus Logo" width="120">
   </picture>
 </p>
+
+# Time Plus - Cosmic Applet
 
 **A feature-rich time applet for [COSMIC Desktop](https://github.com/pop-os/cosmic-epoch)** that extends the default time/date/calendar functionality with integrated weather information and pomodoro timer.
 
@@ -23,7 +23,7 @@
 
 ## 📸 Screenshots
 
-*All screenshots captured from **v0.1.0** running on COSMIC Desktop (Fedora Linux 43)*
+*All screenshots captured from **v0.1.1** running on COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Tab Navigation System</summary>
@@ -140,29 +140,47 @@ Located at the absolute top of the container.
 
 ## 🏗️ Software Architecture
 
-### Central Orchestrator Pattern
+### Neutral Messenger + Orchestrator Pattern
 
-Time Plus follows a clean **Orchestrator + Specialist Modules** architecture:
+Time Plus follows a clean **Neutral Messenger + Orchestrator + Specialist Modules** architecture introduced in v0.1.1:
 
 ```
+┌─────────────────────────────────────────────┐
+│         lib.rs (Neutral Messenger)          │
+│  • Global Message enum (no dependencies)    │
+│  • Tab enum shared across modules           │
+│  • Prevents circular dependencies           │
+└─────────────────────────────────────────────┘
+                     │
+                     ▼
 ┌─────────────────────────────────────────────┐
 │           window.rs (Orchestrator)          │
 │  • Manages popup window lifecycle           │
 │  • Handles tab navigation system            │
 │  • Delegates to specialist modules          │
-│  • NO business logic                        │
+│  • NO business logic (369 lines)            │
 └─────────────────────────────────────────────┘
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-   ┌────────┐  ┌────────┐  ┌────────┐
-   │ time.rs│  │weather │  │ timer  │
-   │        │  │  .rs   │  │  .rs   │
-   │ State  │  │ State  │  │ State  │
-   │ Message│  │ Message│  │ Message│
-   │ update │  │ update │  │ update │
-   │ view   │  │ view   │  │ view   │
-   └────────┘  └────────┘  └────────┘
+                     │
+         ┌───────────┼───────────┬──────────────┐
+         ▼           ▼           ▼              ▼
+    ┌──────────┐ ┌────────┐ ┌────────┐  ┌──────────────┐
+    │calendar  │ │weather │ │ timer  │  │subscriptions │
+    │  .rs     │ │  .rs   │ │  .rs   │  │    .rs       │
+    │          │ │        │ │        │  │              │
+    │ State    │ │ State  │ │ State  │  │ Time tick    │
+    │ Message  │ │ Message│ │ Message│  │ Timezone     │
+    │ update   │ │ update │ │ update │  │ Wake-sleep   │
+    │ view     │ │ view   │ │ view   │  │              │
+    └──────────┘ └────────┘ └────────┘  └──────────────┘
+         │
+         ▼
+    ┌──────────┐
+    │  time.rs │
+    │          │
+    │ Panel    │
+    │ Formatter│
+    │          │
+    └──────────┘
 ```
 
 ### Message Envelope Pattern
@@ -170,15 +188,15 @@ Time Plus follows a clean **Orchestrator + Specialist Modules** architecture:
 Each module has its own **isolated message system**:
 
 ```rust
-// Global message envelope in window.rs
+// Global message envelope in lib.rs (Neutral Messenger)
 pub enum Message {
-    Calendar(time::CalendarMessage),  // Envelope for calendar
-    Weather(weather::WeatherMessage), // Envelope for weather
-    Timer(timer::TimerMessage),       // Envelope for timer
+    Calendar(calendar::CalendarMessage),  // Envelope for calendar
+    Weather(weather::WeatherMessage),     // Envelope for weather
+    Timer(timer::TimerMessage),           // Envelope for timer
     // ... only orchestration messages
 }
 
-// Module-specific messages in time.rs
+// Module-specific messages in calendar.rs
 pub enum CalendarMessage {
     SelectDay(u32),
     PreviousMonth,
@@ -198,6 +216,7 @@ impl CalendarState {
 - ✅ **Maintainability**: Changes to one module don't affect others
 - ✅ **Testability**: Modules can be tested independently
 - ✅ **Scalability**: Easy to add new modules
+- ✅ **No Circular Dependencies**: Neutral Messenger breaks dependency cycles
 
 ### Design Principles
 
@@ -222,17 +241,23 @@ let tabs = custom_tab_widget();
 
 #### 🧩 Separation of Concerns
 
+- **lib.rs**: Neutral message envelope (no dependencies)
 - **window.rs**: Window management + tab orchestration ONLY
 - **Modules**: Complete ownership of their domain (state + logic + view)
+- **subscriptions.rs**: Heavy async logic (time, timezone, wake-from-sleep)
+- **time.rs**: Panel time formatting (PanelFormatter)
 - **No cross-module dependencies**: Modules never import each other
 
 #### 📦 Single Responsibility
 
 Each file has ONE clear purpose:
-- `window.rs` → Popup window orchestration
-- `time.rs` → Calendar functionality
+- `lib.rs` → Neutral Messenger (Message + Tab enums)
+- `window.rs` → Popup window orchestration (369 lines, -48% from v0.1.0)
+- `calendar.rs` → Calendar functionality (state + view + logic)
+- `time.rs` → Panel time formatting (PanelFormatter)
+- `subscriptions.rs` → Subscription management (time tick, timezone, wake-from-sleep)
 - `config.rs` → Configuration management
-- `localize.rs` → Internationalization
+- `localize.rs` → Internationalization + system locale detection
 
 ---
 
@@ -355,29 +380,34 @@ This optimization reduces development cycle time by **~60%** on subsequent build
 ```
 cosmic-applet-timeplus/
 ├── src/
-│   ├── main.rs       # Entry point
-│   ├── lib.rs        # Module declarations
-│   ├── window.rs     # Main applet (tab orchestration)
-│   ├── config.rs     # Configuration structs
-│   ├── localize.rs   # i18n system
-│   ├── time.rs       # Calendar module (view + logic)
-│   ├── weather.rs    # Weather module (placeholder)
-│   └── timer.rs      # Timer module (placeholder)
-├── i18n/             # Translations (61 languages)
+│   ├── main.rs          # Entry point
+│   ├── lib.rs           # Neutral Messenger (Message + Tab enums)
+│   ├── window.rs        # Orchestrator (369 lines, -48% from v0.1.0)
+│   ├── config.rs        # Configuration structs
+│   ├── localize.rs      # i18n system + system locale detection
+│   ├── calendar.rs      # Calendar module (view + logic + state)
+│   ├── time.rs          # Panel time formatting (PanelFormatter)
+│   ├── subscriptions.rs # Subscription management (time, timezone, wake)
+│   ├── weather.rs       # Weather module (placeholder)
+│   └── timer.rs         # Timer module (placeholder)
+├── i18n/                # Translations (61 languages)
 │   └── */cosmic_applet_timeplus.ftl
-├── screenshots/      # UI screenshots
+├── screenshots/         # UI screenshots
 │   ├── calendar.png
 │   ├── weather.png
 │   └── timer.png
-├── data/             # Desktop files
-├── dev.sh            # Development helper script
-├── create_i18n.sh    # i18n file generator
-└── TRANSLATIONS.md   # Translation status
+├── data/                # Desktop files
+├── dev.sh               # Development helper script
+├── create_i18n.sh       # i18n file generator
+└── TRANSLATIONS.md      # Translation status
 ```
 
-**Key Architectural Decisions:**
-- **Modular Design**: Each tab has its own module (`time.rs`, `weather.rs`, `timer.rs`)
-- **Separation of Concerns**: `window.rs` orchestrates, modules implement
+**Key Architectural Decisions (v0.1.1):**
+- **Neutral Messenger Pattern**: `lib.rs` breaks circular dependencies
+- **Modular Design**: Each tab has its own module (`calendar.rs`, `weather.rs`, `timer.rs`)
+- **Separation of Concerns**: `window.rs` orchestrates (369 lines), modules implement
+- **Subscription Isolation**: Heavy async logic in dedicated `subscriptions.rs` (166 lines)
+- **Panel Formatting**: Dedicated `time.rs` with `PanelFormatter` (222 lines)
 - **No Code Duplication**: Uses `cosmic::applet::padded_control` and standard patterns
 - **Consistent Structure**: All placeholders match calendar's header + content layout
 
@@ -446,15 +476,19 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] Follow official cosmic-applet-time patterns
 - [x] Zero warnings compilation
 
-### Phase 3: Infrastructure Refactoring 📍 *NEXT*
-- [ ] **Rename** `time.rs` → `calendar.rs` (better semantic clarity)
-- [ ] **Move** `Message` and `Tab` enums from `window.rs` to `lib.rs` (Neutral Messenger)
-- [ ] **Move** `get_system_locale()` from `window.rs` to `localize.rs`
-- [ ] **Clean** legacy notification/test artifacts from `window.rs`
-- [ ] **Centralize** panel logic in calendar module
-- [ ] Apply same modularization pattern to Weather and Timer
+### Phase 3: Infrastructure Refactoring ✅ *v0.1.1*
+- [x] **Rename** `time.rs` → `calendar.rs` (better semantic clarity)
+- [x] **Move** `Message` and `Tab` enums from `window.rs` to `lib.rs` (Neutral Messenger)
+- [x] **Move** `get_system_locale()` from `window.rs` to `localize.rs`
+- [x] **Create** `subscriptions.rs` for heavy async logic (time, timezone, wake-from-sleep)
+- [x] **Create** `time.rs` for panel formatting (`PanelFormatter`)
+- [x] **Reduce** `window.rs` from 704 to 369 lines (-48%)
+- [x] **Fix** APP_ID to use `com.system76.CosmicAppletTime` for config sync
+- [x] **Fix** HourCycle configuration for military_time
+- [x] **Fix** Real-time configuration updates (show_seconds, military_time)
+- [x] **Optimize** Date format to use `MDT::medium` for better space usage
 
-### Phase 4: Weather Module 🌤️
+### Phase 4: Weather Module 🌤️ *NEXT*
 - [ ] OpenWeatherMap API integration
 - [ ] Location configuration
 - [ ] Weather display in popup
