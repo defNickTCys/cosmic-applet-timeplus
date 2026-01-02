@@ -171,22 +171,25 @@ graph TD
     end
 
     subgraph "Utilitários Compartilhados"
-        TIME(time.rs<br/>Formatador do Painel):::logic
+        TIME(time.rs<br/>Formatação Painel):::logic
+        LOC(localize.rs<br/>Localização):::logic
     end
 
-    %% Fluxo de Dados
-    SUB -->|Emite Message| WIN
-    WIN -->|Delega View| CAL
-    WIN -->|Delega View| WEA
-    WIN -->|Delega View| TIM
-    WIN -->|Usa| TIME
+    %% Fluxo de Dados (Setas longas para melhor espaçamento)
+    SUB --->|Emite Eventos| WIN
+    WIN --->|Gerencia| CAL
+    WIN --->|Gerencia| WEA
+    WIN --->|Gerencia| TIM
+    WIN --->|Usa| TIME
+    WIN --->|Detecta Locale| LOC
 
-    %% Relação com o Mensageiro (Tipos)
-    CAL -.->|Referencia Tipos| LIB
-    WEA -.->|Referencia Tipos| LIB
-    TIM -.->|Referencia Tipos| LIB
-    WIN -.->|Referencia Tipos| LIB
-    TIME -.->|Referencia Tipos| LIB
+    %% Dependência de Tipos
+    CAL -.->|Tipos| LIB
+    WEA -.->|Tipos| LIB
+    TIM -.->|Tipos| LIB
+    WIN -.->|Tipos| LIB
+    TIME -.->|Tipos| LIB
+    LOC -.->|Tipos| LIB
 ```
 
 ### Padrão de Envelope de Mensagens
