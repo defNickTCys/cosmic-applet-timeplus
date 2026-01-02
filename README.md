@@ -535,7 +535,7 @@ Based on [cosmic-applet-time](https://github.com/pop-os/cosmic-applets) by Syste
 
 ## 🙏 Acknowledgments
 
-- **Dio Linux:** for convincing me of the adventure of coming to the Linux world!
+- **Dio Linux** for convincing me of the adventure of coming to the Linux world!
 - **Google Antigravity & Claude 3.5 Sonnet** - AI Assistance
 - **System76** for COSMIC Desktop and the base time applet
 - **Pop!_OS** team for libcosmic framework
