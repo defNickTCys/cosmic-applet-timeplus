@@ -144,7 +144,7 @@ Localizada no topo absoluto do container.
 
 O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + Módulos Especialistas** introduzida na v0.1.1:
 
-```mermaind
+```mermaid
 graph TD
     %% Estilos de Cores
     classDef neutral fill:#2d333b,stroke:#adbac7,color:#adbac7,stroke-width:2px;
