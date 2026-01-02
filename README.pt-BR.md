@@ -146,59 +146,51 @@ O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + 
 
 ```mermaid
 graph TD
-    %% Estilos de Cores
+    %% Estilos de Cores e Transparência
     classDef neutral fill:#2d333b,stroke:#adbac7,color:#adbac7,stroke-width:2px;
     classDef orchestrator fill:#1e4273,stroke:#58a6ff,color:#fff,stroke-width:4px;
     classDef module fill:#238636,stroke:#2ea043,color:#fff;
     classDef logic fill:#d29922,stroke:#e3b341,color:#000;
 
-    subgraph " "
-        direction TB
-        subgraph "Infraestrutura Base"
-            LIB(lib.rs<br/>Mensageiro Neutro):::neutral
-        end
+    %% Estilo para os Cards (Subgraphs)
+    style Infra fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+    style Eventos fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+    style Principal fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+    style Modulos fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+    style Utils fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+
+    subgraph Infra ["<br/>Infraestrutura Base<br/>"]
+        LIB(lib.rs<br/>Mensageiro Neutro):::neutral
     end
 
-    subgraph " "
-        direction TB
-        subgraph "Entrada de Eventos"
-            SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
-        end
+    subgraph Eventos ["<br/>Entrada de Eventos<br/>"]
+        SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
     end
 
-    subgraph " "
-        direction TB
-        subgraph "Lógica Principal"
-            WIN(window.rs<br/>Orquestrador):::orchestrator
-        end
+    subgraph Principal ["<br/>Lógica Principal<br/>"]
+        WIN(window.rs<br/>Orquestrador):::orchestrator
     end
 
-    subgraph " "
-        direction TB
-        subgraph "Módulos Especialistas"
-            CAL(calendar.rs<br/>Calendário):::module
-            WEA(weather.rs<br/>Clima):::module
-            TIM(timer.rs<br/>Timer):::module
-        end
+    subgraph Modulos ["<br/>Módulos Especialistas<br/>"]
+        CAL(calendar.rs<br/>Calendário):::module
+        WEA(weather.rs<br/>Clima):::module
+        TIM(timer.rs<br/>Timer):::module
     end
 
-    subgraph " "
-        direction TB
-        subgraph "Utilitários Compartilhados"
-            TIME(time.rs<br/>Formatador Painel):::logic
-            LOC(localize.rs<br/>Localização):::logic
-        end
+    subgraph Utils ["<br/>Utilitários Compartilhados<br/>"]
+        TIME(time.rs<br/>Formatador Painel):::logic
+        LOC(localize.rs<br/>Localização):::logic
     end
 
-    %% Fluxo com maior espaçamento vertical
-    SUB --->|Emite Message| WIN
+    %% Fluxo de Dados com maior distanciamento
+    SUB --->|Emite Eventos| WIN
     WIN --->|Gerencia| CAL
     WIN --->|Gerencia| WEA
     WIN --->|Gerencia| TIM
     WIN --->|Usa| TIME
     WIN --->|Detecta Locale| LOC
 
-    %% Dependência de Tipos
+    %% Dependência de Tipos (lib.rs como fundação)
     CAL -.->|Tipos| LIB
     WEA -.->|Tipos| LIB
     TIM -.->|Tipos| LIB
