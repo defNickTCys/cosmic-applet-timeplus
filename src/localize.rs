@@ -46,3 +46,39 @@ pub fn localize() {
         eprintln!("Error while loading language for App List {error}");
     }
 }
+
+// ============================================================================
+// System Locale Detection
+// ============================================================================
+
+use icu::locale::Locale;
+
+/// Get system locale from environment variables
+/// 
+/// Checks LC_TIME, LC_ALL, and LANG environment variables in order,
+/// attempting to parse each as an ICU locale. Falls back to en-US if
+/// no valid locale is found.
+pub fn get_system_locale() -> Locale {
+    for var in ["LC_TIME", "LC_ALL", "LANG"] {
+        if let Ok(locale_str) = std::env::var(var) {
+            let cleaned_locale = locale_str
+                .split('.')
+                .next()
+                .unwrap_or(&locale_str)
+                .replace('_', "-");
+
+            if let Ok(locale) = Locale::try_from_str(&cleaned_locale) {
+                return locale;
+            }
+
+            // Try language-only fallback (e.g., "en" from "en-US")
+            if let Some(lang) = cleaned_locale.split('-').next() {
+                if let Ok(locale) = Locale::try_from_str(lang) {
+                    return locale;
+                }
+            }
+        }
+    }
+    tracing::warn!("No valid locale found in environment, using fallback");
+    Locale::try_from_str("en-US").expect("Failed to parse fallback locale 'en-US'")
+}

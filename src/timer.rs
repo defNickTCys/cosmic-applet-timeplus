@@ -9,7 +9,7 @@ use cosmic::{
     widget::{column, container, divider, icon, row, text, Space},
 };
 
-use crate::window::Message;
+use crate::Message;
 use crate::fl;
 
 /// Timer tab placeholder view
