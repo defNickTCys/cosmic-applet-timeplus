@@ -146,57 +146,73 @@ O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + 
 
 ```mermaid
 graph TD
-    %% Estilos de Cores
+    %% Definições de Estilo de Cores
     classDef neutral fill:#2d333b,stroke:#adbac7,color:#adbac7,stroke-width:2px;
     classDef orchestrator fill:#1e4273,stroke:#58a6ff,color:#fff,stroke-width:4px;
     classDef module fill:#238636,stroke:#2ea043,color:#fff;
     classDef logic fill:#d29922,stroke:#e3b341,color:#000;
+    
+    %% Estilo para Títulos Fora dos Cards (Sem borda, texto claro)
+    classDef title fill:none,stroke:none,color:#adbac7,font-weight:bold,font-size:14px;
 
-    %% Estilo dos Contêineres (Transparentes e Estáveis)
-    style Infra fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
-    style Eventos fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
-    style Principal fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
-    style Modulos fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
-    style Utils fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
-
-    subgraph Eventos ["<br/>ENTRADA DE EVENTOS<br/>"]
+    %% 1. Topo: Título ACIMA do Card
+    T_EVENTOS(ENTRADA DE EVENTOS):::title
+    T_EVENTOS --- SUB
+    
+    subgraph G_EVENTOS [" "]
         SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
     end
 
-    subgraph Principal ["<br/>LÓGICA PRINCIPAL<br/>"]
+    %% 2. Window: Título DENTRO, Alinhado à Direita
+    subgraph G_WINDOW ["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LÓGICA PRINCIPAL"]
         WIN(window.rs<br/>Orquestrador):::orchestrator
     end
 
-    subgraph Modulos ["<br/>MÓDULOS ESPECIALISTAS<br/>"]
+    %% 3. Meio: Títulos ABAIXO e Fora dos Cards
+    subgraph G_MODULOS [" "]
         CAL(calendar.rs<br/>Calendário):::module
         WEA(weather.rs<br/>Clima):::module
         TIM(timer.rs<br/>Timer):::module
     end
+    CAL --- T_MODULOS(MÓDULOS ESPECIALISTAS):::title
 
-    subgraph Utils ["<br/>UTILITÁRIOS COMPARTILHADOS<br/>"]
+    subgraph G_UTILS [" "]
         TIME(time.rs<br/>Formatação Painel):::logic
         LOC(localize.rs<br/>Localização):::logic
     end
+    TIME --- T_UTILS(UTILITÁRIOS COMPARTILHADOS):::title
 
-    subgraph Infra ["<br/>INFRAESTRUTURA BASE<br/>"]
+    %% 4. Final: Título ABAIXO do Card
+    subgraph G_INFRA [" "]
         LIB(lib.rs<br/>Mensageiro Neutro):::neutral
     end
+    LIB --- T_INFRA(INFRAESTRUTURA BASE):::title
 
-    %% Fluxo de Dados (Setas Diretas e Limpas)
+    %% Fluxo de Dados (Setas Longas)
     SUB --->|Eventos| WIN
     WIN --->|Gerencia| CAL
     WIN --->|Gerencia| WEA
     WIN --->|Gerencia| TIM
     WIN --->|Usa| TIME
-    WIN --->|Locale| LOC
+    WIN --->|Detecta| LOC
 
-    %% Dependência de Tipos (lib.rs como base)
+    %% Dependências de Tipos (Tracejadas para a Base)
     CAL -.-> LIB
     WEA -.-> LIB
     TIM -.-> LIB
     WIN -.-> LIB
     TIME -.-> LIB
     LOC -.-> LIB
+
+    %% Estilos dos Cards (Pontilhados e Transparentes)
+    style G_EVENTOS fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
+    style G_WINDOW fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
+    style G_MODULOS fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
+    style G_UTILS fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
+    style G_INFRA fill:#333,fill-opacity:0.05,stroke:#555,stroke-dasharray: 5 5
+
+    %% Esconder linhas de conexão dos títulos
+    linkStyle 0,4,6,8 stroke-width:0px;
 ```
 
 ### Padrão de Envelope de Mensagens
