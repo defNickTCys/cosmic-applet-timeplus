@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use cosmic::{
-    Element,
     applet::padded_control,
     cosmic_theme::Spacing,
     iced::{Alignment, Length},
     widget::{column, container, divider, icon, row, text, Space},
+    Element,
 };
 
-use crate::window::Message;
 use crate::fl;
+use crate::Message;
 
 /// Timer tab placeholder view
 pub fn view_timer<'a>() -> Element<'a, Message> {
@@ -19,12 +19,10 @@ pub fn view_timer<'a>() -> Element<'a, Message> {
     } = cosmic::theme::active().cosmic().spacing;
 
     let timer_icon: cosmic::widget::Icon = icon::from_name("alarm-symbolic")
-        .size(24)  // Smaller to match calendar header height
+        .size(24) // Smaller to match calendar header height
         .into();
-    
-    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic")
-        .size(16)
-        .into();
+
+    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic").size(16).into();
 
     // Match calendar structure: header + content (2 elements)
     column()
@@ -35,11 +33,11 @@ pub fn view_timer<'a>() -> Element<'a, Message> {
                 .push(Space::with_width(Length::Fixed(12.0)))
                 .push(
                     column()
-                        .push(text(fl!("timer")).size(18))  // Match calendar date size
-                        .push(text::body(fl!("timer-subtitle")))  // Match calendar day_of_week
+                        .push(text(fl!("timer")).size(18)) // Match calendar date size
+                        .push(text::body(fl!("timer-subtitle"))), // Match calendar day_of_week
                 )
                 .align_y(Alignment::Center)
-                .padding([12, 20])  // Match calendar HEADER_PADDING
+                .padding([12, 20]), // Match calendar HEADER_PADDING
         )
         // Standard separator
         .push(padded_control(divider::horizontal::default()).padding([space_xxs, space_s]))
@@ -54,16 +52,22 @@ pub fn view_timer<'a>() -> Element<'a, Message> {
                             .push(features_icon)
                             .push(Space::with_width(Length::Fixed(8.0)))
                             .push(text::heading(fl!("timer-placeholder-features")))
-                            .align_y(Alignment::Center)
+                            .align_y(Alignment::Center),
                     )
                     .push(Space::with_height(Length::Fixed(8.0)))
-                    .push(text::body("• ".to_string() + &fl!("timer-feature-countdown")))
+                    .push(text::body(
+                        "• ".to_string() + &fl!("timer-feature-countdown"),
+                    ))
                     .push(text::body("• ".to_string() + &fl!("timer-feature-presets")))
-                    .push(text::body("• ".to_string() + &fl!("timer-feature-notifications")))
-                    .push(text::body("• ".to_string() + &fl!("timer-feature-persistent")))
-                    .spacing(4)
+                    .push(text::body(
+                        "• ".to_string() + &fl!("timer-feature-notifications"),
+                    ))
+                    .push(text::body(
+                        "• ".to_string() + &fl!("timer-feature-persistent"),
+                    ))
+                    .spacing(4),
             )
-            .padding([0, 20])  // Match header horizontal padding for alignment
+            .padding([0, 20]), // Match header horizontal padding for alignment
         )
         .into()
 }

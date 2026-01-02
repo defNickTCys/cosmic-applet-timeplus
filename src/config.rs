@@ -31,13 +31,12 @@ pub struct TimeAppletConfig {
 impl Default for TimeAppletConfig {
     fn default() -> Self {
         Self {
-            show_date_in_top_panel: true,  // Show date + time on panel
+            show_date_in_top_panel: true, // Show date + time on panel
             show_weekday: false,
-            military_time: false,  // Let ICU auto-detect from locale
+            military_time: false, // Let ICU auto-detect from locale
             show_seconds: false,
             first_day_of_week: 0,
             format_strftime: String::new(),
         }
     }
 }
-

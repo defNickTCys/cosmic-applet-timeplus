@@ -1,92 +1,46 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
-use chrono::Timelike;
-use cosmic::iced_futures::stream;
-use cosmic::widget::Id;
 use cosmic::widget::segmented_button;
+use cosmic::widget::Id;
 use cosmic::{
-    Element, Task, app,
+    app,
     applet::{cosmic_panel_config::PanelAnchor, menu_button, padded_control},
     cctk::sctk::reexports::calloop,
     cosmic_theme::Spacing,
     iced::{
-        Alignment, Length, Rectangle, Subscription,
-        futures::{SinkExt, StreamExt, channel::mpsc},
         platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup},
-        widget::{column, row, vertical_space},
-        window,
+        widget::column,
+        window, Rectangle, Subscription,
     },
-    iced_widget::{Column, horizontal_rule},
     theme,
-    widget::{
-        autosize, button, container, divider, horizontal_space, icon,
-        rectangle_tracker::*, text,
-    },
+    widget::{autosize, button, container, divider, icon, rectangle_tracker::*, text},
+    Element, Task,
 };
-use logind_zbus::manager::ManagerProxy;
 use std::sync::LazyLock;
-use timedate_zbus::TimeDateProxy;
-use tokio::{sync::watch, time};
+use tokio::sync::watch;
 
 use crate::{config::TimeAppletConfig, fl};
 use cosmic::applet::token::subscription::{
-    TokenRequest, TokenUpdate, activation_token_subscription,
+    activation_token_subscription, TokenRequest, TokenUpdate,
 };
-use icu::{
-    datetime::{
-        DateTimeFormatter, DateTimeFormatterPreferences, fieldsets,
-        options::TimePrecision,
-    },
-    locale::Locale,
-};
+use icu::locale::Locale;
 
-// Tab selection
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tab {
-    Calendar,
-    Weather,
-    Timer,
-}
+// Import global types from lib.rs (Neutral Messenger)
+use crate::{Message, Tab};
+
+// Import localization function
+use crate::localize::get_system_locale;
 
 static AUTOSIZE_MAIN_ID: LazyLock<Id> = LazyLock::new(|| Id::new("autosize-main"));
-
-// Specifiers for strftime that indicate seconds. Subsecond precision isn't supported by the applet
-// so those specifiers aren't listed here. This list is non-exhaustive, and it's possible that %X
-// and other specifiers have to be added depending on locales.
-const STRFTIME_SECONDS: &[char] = &['S', 'T', '+', 's'];
-
-fn get_system_locale() -> Locale {
-    for var in ["LC_TIME", "LC_ALL", "LANG"] {
-        if let Ok(locale_str) = std::env::var(var) {
-            let cleaned_locale = locale_str
-                .split('.')
-                .next()
-                .unwrap_or(&locale_str)
-                .replace('_', "-");
-
-            if let Ok(locale) = Locale::try_from_str(&cleaned_locale) {
-                return locale;
-            }
-
-            // Try language-only fallback (e.g., "en" from "en-US")
-            if let Some(lang) = cleaned_locale.split('-').next() {
-                if let Ok(locale) = Locale::try_from_str(lang) {
-                    return locale;
-                }
-            }
-        }
-    }
-    tracing::warn!("No valid locale found in environment, using fallback");
-    Locale::try_from_str("en-US").expect("Failed to parse fallback locale 'en-US'")
-}
 
 pub struct Window {
     core: cosmic::app::Core,
     popup: Option<window::Id>,
     now: chrono::DateTime<chrono::FixedOffset>,
     timezone: Option<chrono_tz::Tz>,
-    calendar_state: crate::time::CalendarState,
+    calendar_state: crate::calendar::CalendarState,
+    panel_formatter: crate::time::PanelFormatter, // Panel time formatter
     rectangle_tracker: Option<RectangleTracker<u32>>,
     rectangle: Rectangle,
     token_tx: Option<calloop::channel::Sender<TokenRequest>>,
@@ -98,182 +52,11 @@ pub struct Window {
     tab_model: segmented_button::SingleSelectModel,
 }
 
-#[derive(Debug, Clone)]
-pub enum Message {
-    TogglePopup,
-    CloseRequested(window::Id),
-    Tick,
-    Rectangle(RectangleUpdate<u32>),
-    Calendar(crate::time::CalendarMessage),
-    OpenDateTimeSettings,
-    Token(TokenUpdate),
-    ConfigChanged(TimeAppletConfig),
-    TimezoneUpdate(String),
-    TabActivated(segmented_button::Entity),
-}
-
-impl Window {
-    /// Format with strftime if non-empty and ignore errors.
-    ///
-    /// Do not use to_string(). The formatter panics on invalid specifiers.
-    fn maybe_strftime(&self) -> Option<String> {
-        // strftime may override locale specific elements so it stands alone rather
-        // than using ICU.
-        (!self.config.format_strftime.is_empty())
-            .then(|| {
-                let mut s = String::new();
-                self.now
-                    .format(&self.config.format_strftime)
-                    .write_to(&mut s)
-                    .map(|_| s)
-                    .ok()
-            })
-            .flatten()
-    }
-
-    fn vertical_layout(&self) -> Element<'_, Message> {
-        let elements: Vec<Element<'_, Message>> = if let Some(strftime) = self.maybe_strftime() {
-            strftime
-                .split_whitespace()
-                .map(|piece| self.core.applet.text(piece.to_owned()).into())
-                .collect()
-        } else {
-            let mut elements = Vec::new();
-            let date = self.now.naive_local();
-            let datetime = crate::time::create_datetime(&date, &self.now);
-            let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
-            // Let ICU auto-detect hour cycle from locale preferences
-
-            if self.config.show_date_in_top_panel {
-                let formatted_date = DateTimeFormatter::try_new(prefs, fieldsets::MD::medium())
-                    .unwrap()
-                    .format(&datetime)
-                    .to_string();
-
-                for p in formatted_date.split_whitespace() {
-                    elements.push(self.core.applet.text(p.to_owned()).into());
-                }
-                elements.push(
-                    horizontal_rule(2)
-                        .width(self.core.applet.suggested_size(true).0)
-                        .into(),
-                );
-            }
-            let mut fs = fieldsets::T::medium();
-            if !self.config.show_seconds {
-                fs = fs.with_time_precision(TimePrecision::Minute);
-            }
-            let formatted_time = DateTimeFormatter::try_new(prefs, fs)
-                .unwrap()
-                .format(&datetime)
-                .to_string();
-
-            // todo: split using formatToParts when it is implemented
-            // https://github.com/unicode-org/icu4x/issues/4936#issuecomment-2128812667
-            for p in formatted_time.split_whitespace().flat_map(|s| s.split(':')) {
-                elements.push(self.core.applet.text(p.to_owned()).into());
-            }
-
-            elements
-        };
-
-        let date_time_col = Column::with_children(elements)
-            .align_x(Alignment::Center)
-            .spacing(4);
-
-        Element::from(
-            column!(
-                date_time_col,
-                horizontal_space().width(Length::Fixed(
-                    (self.core.applet.suggested_size(true).0
-                        + 2 * self.core.applet.suggested_padding(true).1)
-                        as f32
-                ))
-            )
-            .align_x(Alignment::Center),
-        )
-    }
-
-    fn horizontal_layout(&self) -> Element<'_, Message> {
-        let formatted_date = if let Some(strftime) = self.maybe_strftime() {
-            strftime
-        } else {
-            let datetime = crate::time::create_datetime(&self.now, &self.now);
-            let prefs = DateTimeFormatterPreferences::from(self.locale.clone());
-            // Let ICU auto-detect hour cycle from locale preferences
-
-            if self.config.show_date_in_top_panel {
-                if self.config.show_weekday {
-                    let mut fs = fieldsets::MDET::medium();
-                    if !self.config.show_seconds {
-                        fs = fs.with_time_precision(TimePrecision::Minute);
-                    }
-                    DateTimeFormatter::try_new(prefs, fs)
-                        .unwrap()
-                        .format(&datetime)
-                        .to_string()
-                } else {
-                    let mut fs = fieldsets::MDT::long();  // Use long format: "31 de dezembro às hh:mm"
-                    if !self.config.show_seconds {
-                        fs = fs.with_time_precision(TimePrecision::Minute);
-                    }
-                    DateTimeFormatter::try_new(prefs, fs)
-                        .unwrap()
-                        .format(&datetime)
-                        .to_string()
-                }
-            } else {
-                let mut fs = fieldsets::T::medium();
-                if !self.config.show_seconds {
-                    fs = fs.with_time_precision(TimePrecision::Minute);
-                }
-                DateTimeFormatter::try_new(prefs, fs)
-                    .unwrap()
-                    .format(&datetime)
-                    .to_string()
-            }
-        };
-
-        Element::from(
-            row!(
-                self.core.applet.text(formatted_date),
-                container(vertical_space().height(Length::Fixed(
-                    (self.core.applet.suggested_size(true).1
-                        + 2 * self.core.applet.suggested_padding(true).1)
-                        as f32
-                )))
-            )
-            .align_y(Alignment::Center),
-        )
-    }
-
-    // Calendar tab view
-    fn view_calendar(&self) -> Element<'_, Message> {
-        crate::time::view_calendar(
-            &self.locale,
-            &self.calendar_state,
-            &self.now,
-            self.config.first_day_of_week,
-        )
-        .map(Message::Calendar)
-    }
-
-    // Weather tab view
-    fn view_weather(&self) -> Element<'_, Message> {
-        crate::weather::view_weather()
-    }
-
-    // Timer tab view
-    fn view_timer(&self) -> Element<'_, Message> {
-        crate::timer::view_timer()
-    }
-}
-
 impl cosmic::Application for Window {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
     type Flags = ();
-    const APP_ID: &'static str = "com.system76.CosmicAppletTimePlus";
+    const APP_ID: &'static str = "com.system76.CosmicAppletTime";
 
     fn init(core: app::Core, _flags: Self::Flags) -> (Self, app::Task<Self::Message>) {
         let locale = get_system_locale();
@@ -305,7 +88,7 @@ impl cosmic::Application for Window {
                     .data(Tab::Timer)
             })
             .build();
-        
+
         // Activate first tab
         tab_model.activate_position(0);
 
@@ -315,7 +98,8 @@ impl cosmic::Application for Window {
                 popup: None,
                 now,
                 timezone: None,
-                calendar_state: crate::time::CalendarState::new(now),
+                calendar_state: crate::calendar::CalendarState::new(now),
+                panel_formatter: crate::time::PanelFormatter::new(locale.clone()),
                 rectangle_tracker: None,
                 rectangle: Rectangle::default(),
                 token_tx: None,
@@ -342,137 +126,13 @@ impl cosmic::Application for Window {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        fn time_subscription(mut show_seconds: watch::Receiver<bool>) -> Subscription<Message> {
-            Subscription::run_with_id(
-                "time-sub",
-                stream::channel(1, |mut output| async move {
-                    // Mark this receiver's state as changed so that it always receives an initial
-                    // update during the loop below
-                    // This allows us to avoid duplicating code from the loop
-                    show_seconds.mark_changed();
-                    let mut period = 1;
-                    let mut timer = time::interval(time::Duration::from_secs(period));
-                    timer.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-
-                    loop {
-                        tokio::select! {
-                            _ = timer.tick() => {
-                                #[cfg(debug_assertions)]
-                                if let Err(err) = output.send(Message::Tick).await {
-                                    tracing::error!(?err, "Failed sending tick request to applet");
-                                }
-                                #[cfg(not(debug_assertions))]
-                                let _ = output.send(Message::Tick).await;
-
-                                // Calculate a delta if we're ticking per minute to keep ticks stable
-                                // Based on i3status-rust
-                                let current = chrono::Local::now().second() as u64 % period;
-                                if current != 0 {
-                                    timer.reset_after(time::Duration::from_secs(period - current));
-                                }
-                            },
-                            // Update timer if the user toggles show_seconds
-                            Ok(()) = show_seconds.changed() => {
-                                let seconds = *show_seconds.borrow_and_update();
-                                if seconds {
-                                    period = 1;
-                                    // Subsecond precision isn't needed; skip calculating offset
-                                    let period = time::Duration::from_secs(period);
-                                    let start = time::Instant::now() + period;
-                                    timer = time::interval_at(start, period);
-                                } else {
-                                    period = 60;
-                                    let delta = time::Duration::from_secs(period - chrono::Utc::now().second() as u64 % period);
-                                    let now = time::Instant::now();
-                                    // Start ticking from the next minute to update the time properly
-                                    let start = now + delta;
-                                    let period = time::Duration::from_secs(period);
-                                    timer = time::interval_at(start, period);
-                                }
-
-                                timer.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-                            }
-                        }
-                    }
-                }),
-            )
-        }
-
-        // Update applet's timezone if the system's timezone changes
-        async fn timezone_update(output: &mut mpsc::Sender<Message>) -> zbus::Result<()> {
-            let conn = zbus::Connection::system().await?;
-            let proxy = TimeDateProxy::new(&conn).await?;
-
-            // The stream always returns the current timezone as its first item even if it wasn't
-            // updated. If the proxy is recreated in a loop somehow, the resulting stream will
-            // always yield an update immediately which could lead to spammed false updates.
-            let mut stream_tz = proxy.receive_timezone_changed().await;
-            while let Some(property) = stream_tz.next().await {
-                let tz = property.get().await?;
-                output
-                    .send(Message::TimezoneUpdate(tz))
-                    .await
-                    .map_err(|e| {
-                        zbus::Error::InputOutput(std::sync::Arc::new(std::io::Error::other(e)))
-                    })?;
-            }
-            Ok(())
-        }
-
-        fn timezone_subscription() -> Subscription<Message> {
-            Subscription::run_with_id(
-                "timezone-sub",
-                stream::channel(1, |mut output| async move {
-                    'retry: loop {
-                        match timezone_update(&mut output).await {
-                            Ok(()) => break 'retry,
-                            Err(err) => {
-                                tracing::error!(
-                                    ?err,
-                                    "Automatic timezone updater failed; retrying in one minute"
-                                );
-                                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-                            }
-                        }
-                    }
-
-                    std::future::pending().await
-                }),
-            )
-        }
-
-        // Update the time when waking from sleep
-        async fn wake_from_sleep(output: &mut mpsc::Sender<Message>) -> zbus::Result<()> {
-            let connection = zbus::Connection::system().await?;
-            let proxy = ManagerProxy::new(&connection).await?;
-
-            while let Some(property) = proxy.receive_prepare_for_sleep().await?.next().await {
-                let waking = !property.args()?.start();
-                if waking {
-                    let _ = output.send(Message::Tick).await;
-                }
-            }
-            Ok(())
-        }
-
-        fn wake_from_sleep_subscription() -> Subscription<Message> {
-            Subscription::run_with_id(
-                "wake-from-suspend-sub",
-                stream::channel(1, |mut output| async move {
-                    if let Err(err) = wake_from_sleep(&mut output).await {
-                        tracing::error!(?err, "Failed to subscribe to wake-from-sleep signal");
-                    }
-                }),
-            )
-        }
-
         let show_seconds_rx = self.show_seconds_tx.subscribe();
         Subscription::batch([
             rectangle_tracker_subscription(0).map(|e| Message::Rectangle(e.1)),
-            time_subscription(show_seconds_rx),
+            crate::subscriptions::time_subscription(show_seconds_rx),
             activation_token_subscription(0).map(Message::Token),
-            timezone_subscription(),
-            wake_from_sleep_subscription(),
+            crate::subscriptions::timezone_subscription(),
+            crate::subscriptions::wake_from_sleep_subscription(),
             self.core.watch_config(Self::APP_ID).map(|u| {
                 for err in u.errors {
                     tracing::error!(?err, "Error watching config");
@@ -583,7 +243,8 @@ impl cosmic::Application for Window {
                 self.show_seconds_tx.send_if_modified(|show_seconds| {
                     if !c.format_strftime.is_empty() {
                         if c.format_strftime.split('%').any(|s| {
-                            STRFTIME_SECONDS.contains(&s.chars().next().unwrap_or_default())
+                            crate::time::STRFTIME_SECONDS
+                                .contains(&s.chars().next().unwrap_or_default())
                         }) && !*show_seconds
                         {
                             // The strftime formatter contains a seconds specifier. Force enable
@@ -630,9 +291,11 @@ impl cosmic::Application for Window {
         );
 
         let button = button::custom(if horizontal {
-            self.horizontal_layout()
+            self.panel_formatter
+                .horizontal_layout(&self.now, &self.config, &self.core.applet)
         } else {
-            self.vertical_layout()
+            self.panel_formatter
+                .vertical_layout(&self.now, &self.config, &self.core.applet)
         })
         .padding(if horizontal {
             [0, self.core.applet.suggested_padding(true).0]
@@ -648,11 +311,10 @@ impl cosmic::Application for Window {
             } else {
                 button.into()
             },
-                    AUTOSIZE_MAIN_ID.clone(),
+            AUTOSIZE_MAIN_ID.clone(),
         )
         .into()
     }
-
 
     fn view_window(&self, _id: window::Id) -> Element<'_, Message> {
         let Spacing {
@@ -662,17 +324,23 @@ impl cosmic::Application for Window {
         // Tab navigation - matches system separator width with padding
         let tabs = container(
             segmented_button::horizontal(&self.tab_model)
-                .button_spacing(space_xxs)  // Spacing between icon and text
-                .button_padding([space_xxs, space_s, space_xxs, space_s])  // Symmetric padding (top, right, bottom, left)
-                .on_activate(Message::TabActivated)
+                .button_spacing(space_xxs) // Spacing between icon and text
+                .button_padding([space_xxs, space_s, space_xxs, space_s]) // Symmetric padding (top, right, bottom, left)
+                .on_activate(Message::TabActivated),
         )
-        .padding([0, space_s]);  // Horizontal padding to match separator
+        .padding([0, space_s]); // Horizontal padding to match separator
 
         // Select view based on active tab
         let tab_content = match self.selected_tab {
-            Tab::Calendar => self.view_calendar(),
-            Tab::Weather => self.view_weather(),
-            Tab::Timer => self.view_timer(),
+            Tab::Calendar => crate::calendar::view_calendar(
+                &self.locale,
+                &self.calendar_state,
+                &self.now,
+                self.config.first_day_of_week,
+            )
+            .map(Message::Calendar),
+            Tab::Weather => crate::weather::view_weather(),
+            Tab::Timer => crate::timer::view_timer(),
         };
 
         // Footer with settings button
@@ -682,12 +350,7 @@ impl cosmic::Application for Window {
                 .on_press(Message::OpenDateTimeSettings),
         ];
 
-        let content_list = column![
-            tabs,
-            tab_content,
-            footer,
-        ]
-        .padding([8, 0]);
+        let content_list = column![tabs, tab_content, footer,].padding([8, 0]);
 
         self.core
             .applet
@@ -699,5 +362,3 @@ impl cosmic::Application for Window {
         Some(Message::CloseRequested(id))
     }
 }
-
-
