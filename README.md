@@ -138,6 +138,104 @@ Located at the absolute top of the container.
 
 ---
 
+## 🏗️ Software Architecture
+
+### Central Orchestrator Pattern
+
+Time Plus follows a clean **Orchestrator + Specialist Modules** architecture:
+
+```
+┌─────────────────────────────────────────────┐
+│           window.rs (Orchestrator)          │
+│  • Manages popup window lifecycle           │
+│  • Handles tab navigation system            │
+│  • Delegates to specialist modules          │
+│  • NO business logic                        │
+└─────────────────────────────────────────────┘
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+   ┌────────┐  ┌────────┐  ┌────────┐
+   │ time.rs│  │weather │  │ timer  │
+   │        │  │  .rs   │  │  .rs   │
+   │ State  │  │ State  │  │ State  │
+   │ Message│  │ Message│  │ Message│
+   │ update │  │ update │  │ update │
+   │ view   │  │ view   │  │ view   │
+   └────────┘  └────────┘  └────────┘
+```
+
+### Message Envelope Pattern
+
+Each module has its own **isolated message system**:
+
+```rust
+// Global message envelope in window.rs
+pub enum Message {
+    Calendar(time::CalendarMessage),  // Envelope for calendar
+    Weather(weather::WeatherMessage), // Envelope for weather
+    Timer(timer::TimerMessage),       // Envelope for timer
+    // ... only orchestration messages
+}
+
+// Module-specific messages in time.rs
+pub enum CalendarMessage {
+    SelectDay(u32),
+    PreviousMonth,
+    NextMonth,
+}
+
+// Module handles its own state
+impl CalendarState {
+    pub fn update(&mut self, msg: CalendarMessage) {
+        // All calendar logic here
+    }
+}
+```
+
+**Benefits:**
+- ✅ **Encapsulation**: Each module is self-contained
+- ✅ **Maintainability**: Changes to one module don't affect others
+- ✅ **Testability**: Modules can be tested independently
+- ✅ **Scalability**: Easy to add new modules
+
+### Design Principles
+
+#### 🎯 Native by Default
+
+**The applet prioritizes COSMIC native solutions over custom implementations:**
+
+- **Widgets**: Use `libcosmic` components (`segmented_button`, `padded_control`, etc.)
+- **System APIs**: Integrate with COSMIC daemons (notifications, settings, etc.)
+- **Styling**: Follow COSMIC HIG strictly (spacing, colors, typography)
+- **Patterns**: Match official applets' architecture and code style
+
+**Example:**
+```rust
+// ✅ GOOD: Use native COSMIC widget
+let tabs = segmented_button::horizontal(&self.tab_model)
+    .on_activate(Message::TabActivated);
+
+// ❌ BAD: Custom tab implementation
+let tabs = custom_tab_widget();
+```
+
+#### 🧩 Separation of Concerns
+
+- **window.rs**: Window management + tab orchestration ONLY
+- **Modules**: Complete ownership of their domain (state + logic + view)
+- **No cross-module dependencies**: Modules never import each other
+
+#### 📦 Single Responsibility
+
+Each file has ONE clear purpose:
+- `window.rs` → Popup window orchestration
+- `time.rs` → Calendar functionality
+- `config.rs` → Configuration management
+- `localize.rs` → Internationalization
+
+---
+
 ## 🤖 Development Philosophy
 
 This project is an experiment in **"Vibe Coding"** (Assisted Development) - a collaboration between human creativity and AI precision.
@@ -339,25 +437,42 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] Content-driven height (no fixed dimensions)
 - [x] Standard dividers with proper spacing
 
-### Phase 3: Weather Module 📍
+### Phase 2.5: Calendar Modularization ✅
+- [x] Create `CalendarState` for state encapsulation
+- [x] Create `CalendarMessage` enum for calendar interactions
+- [x] Implement message envelope pattern (`Message::Calendar`)
+- [x] Move all calendar logic to `time.rs`
+- [x] Transform `window.rs` into pure orchestrator
+- [x] Follow official cosmic-applet-time patterns
+- [x] Zero warnings compilation
+
+### Phase 3: Infrastructure Refactoring 📍 *NEXT*
+- [ ] **Rename** `time.rs` → `calendar.rs` (better semantic clarity)
+- [ ] **Move** `Message` and `Tab` enums from `window.rs` to `lib.rs` (Neutral Messenger)
+- [ ] **Move** `get_system_locale()` from `window.rs` to `localize.rs`
+- [ ] **Clean** legacy notification/test artifacts from `window.rs`
+- [ ] **Centralize** panel logic in calendar module
+- [ ] Apply same modularization pattern to Weather and Timer
+
+### Phase 4: Weather Module 🌤️
 - [ ] OpenWeatherMap API integration
 - [ ] Location configuration
 - [ ] Weather display in popup
 - [ ] Mini weather widget on panel
 
-### Phase 4: Timer Module ⏱️
+### Phase 5: Timer Module ⏱️
 - [ ] Countdown timer logic
 - [ ] Preset management
 - [ ] Desktop notifications
 - [ ] Mini timer widget on panel
 
-### Phase 5: Quick Reminders 📝
+### Phase 6: Quick Reminders 📝
 - [ ] Date-based reminder storage
 - [ ] Visual indicators on calendar
 - [ ] Add/edit/delete UI
 - [ ] Desktop notifications when due
 
-### Phase 6: Polish 💎
+### Phase 7: Polish 💎
 - [ ] Settings UI
 - [ ] Keyboard shortcuts
 - [ ] Accessibility improvements

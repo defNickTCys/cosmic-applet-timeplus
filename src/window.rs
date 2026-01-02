@@ -1,7 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
-use chrono::{Datelike, Timelike};
+use chrono::Timelike;
 use cosmic::iced_futures::stream;
 use cosmic::widget::Id;
 use cosmic::widget::segmented_button;
@@ -86,8 +86,7 @@ pub struct Window {
     popup: Option<window::Id>,
     now: chrono::DateTime<chrono::FixedOffset>,
     timezone: Option<chrono_tz::Tz>,
-    date_today: chrono::NaiveDate,
-    date_selected: chrono::NaiveDate,
+    calendar_state: crate::time::CalendarState,
     rectangle_tracker: Option<RectangleTracker<u32>>,
     rectangle: Rectangle,
     token_tx: Option<calloop::channel::Sender<TokenRequest>>,
@@ -105,9 +104,7 @@ pub enum Message {
     CloseRequested(window::Id),
     Tick,
     Rectangle(RectangleUpdate<u32>),
-    SelectDay(u32),
-    PreviousMonth,
-    NextMonth,
+    Calendar(crate::time::CalendarMessage),
     OpenDateTimeSettings,
     Token(TokenUpdate),
     ConfigChanged(TimeAppletConfig),
@@ -254,11 +251,11 @@ impl Window {
     fn view_calendar(&self) -> Element<'_, Message> {
         crate::time::view_calendar(
             &self.locale,
-            self.date_selected,
-            self.date_today,
+            &self.calendar_state,
             &self.now,
             self.config.first_day_of_week,
         )
+        .map(Message::Calendar)
     }
 
     // Weather tab view
@@ -286,9 +283,6 @@ impl cosmic::Application for Window {
         // Instead of using the local timezone, we will store an offset that is updated if the
         // timezone is ever externally changed
         let now = chrono::Local::now().fixed_offset();
-
-        // get today's date for highlighting purposes
-        let today = chrono::NaiveDate::from(now.naive_local());
 
         // Synch `show_seconds` from the config within the time subscription
         let (show_seconds_tx, _) = watch::channel(true);
@@ -321,8 +315,7 @@ impl cosmic::Application for Window {
                 popup: None,
                 now,
                 timezone: None,
-                date_today: today,
-                date_selected: today,
+                calendar_state: crate::time::CalendarState::new(now),
                 rectangle_tracker: None,
                 rectangle: Rectangle::default(),
                 token_tx: None,
@@ -495,8 +488,7 @@ impl cosmic::Application for Window {
                 if let Some(p) = self.popup.take() {
                     destroy_popup(p)
                 } else {
-                    self.date_today = chrono::NaiveDate::from(self.now.naive_local());
-                    self.date_selected = self.date_today;
+                    self.calendar_state.reset_to_today(self.now);
 
                     let new_id = window::Id::unique();
                     self.popup = Some(new_id);
@@ -550,34 +542,8 @@ impl cosmic::Application for Window {
                 }
                 Task::none()
             }
-            Message::SelectDay(day) => {
-                if let Some(date) = self.date_selected.with_day(day) {
-                    self.date_selected = date;
-                } else {
-                    tracing::error!("invalid naivedate");
-                }
-                Task::none()
-            }
-            Message::PreviousMonth => {
-                if let Some(date) = self
-                    .date_selected
-                    .checked_sub_months(chrono::Months::new(1))
-                {
-                    self.date_selected = date;
-                } else {
-                    tracing::error!("invalid naivedate");
-                }
-                Task::none()
-            }
-            Message::NextMonth => {
-                if let Some(date) = self
-                    .date_selected
-                    .checked_add_months(chrono::Months::new(1))
-                {
-                    self.date_selected = date;
-                } else {
-                    tracing::error!("invalid naivedate");
-                }
+            Message::Calendar(msg) => {
+                self.calendar_state.update(msg);
                 Task::none()
             }
             Message::OpenDateTimeSettings => {
@@ -641,8 +607,7 @@ impl cosmic::Application for Window {
             Message::TimezoneUpdate(timezone) => {
                 if let Ok(timezone) = timezone.parse::<chrono_tz::Tz>() {
                     self.now = chrono::Local::now().with_timezone(&timezone).fixed_offset();
-                    self.date_today = chrono::NaiveDate::from(self.now.naive_local());
-                    self.date_selected = self.date_today;
+                    self.calendar_state.reset_to_today(self.now);
                     self.timezone = Some(timezone);
                 }
 
