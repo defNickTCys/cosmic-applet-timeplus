@@ -152,31 +152,46 @@ graph TD
     classDef module fill:#238636,stroke:#2ea043,color:#fff;
     classDef logic fill:#d29922,stroke:#e3b341,color:#000;
 
-    subgraph "Infraestrutura Base"
-        LIB(lib.rs<br/>Mensageiro Neutro):::neutral
+    subgraph " "
+        direction TB
+        subgraph "Infraestrutura Base"
+            LIB(lib.rs<br/>Mensageiro Neutro):::neutral
+        end
     end
 
-    subgraph "Entrada de Eventos"
-        SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
+    subgraph " "
+        direction TB
+        subgraph "Entrada de Eventos"
+            SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
+        end
     end
 
-    subgraph "Lógica Principal"
-        WIN(window.rs<br/>Orquestrador):::orchestrator
+    subgraph " "
+        direction TB
+        subgraph "Lógica Principal"
+            WIN(window.rs<br/>Orquestrador):::orchestrator
+        end
     end
 
-    subgraph "Módulos Especialistas"
-        CAL(calendar.rs<br/>Calendário):::module
-        WEA(weather.rs<br/>Clima):::module
-        TIM(timer.rs<br/>Timer):::module
+    subgraph " "
+        direction TB
+        subgraph "Módulos Especialistas"
+            CAL(calendar.rs<br/>Calendário):::module
+            WEA(weather.rs<br/>Clima):::module
+            TIM(timer.rs<br/>Timer):::module
+        end
     end
 
-    subgraph "Utilitários Compartilhados"
-        TIME(time.rs<br/>Formatação Painel):::logic
-        LOC(localize.rs<br/>Localização):::logic
+    subgraph " "
+        direction TB
+        subgraph "Utilitários Compartilhados"
+            TIME(time.rs<br/>Formatador Painel):::logic
+            LOC(localize.rs<br/>Localização):::logic
+        end
     end
 
-    %% Fluxo de Dados (Setas longas para melhor espaçamento)
-    SUB --->|Emite Eventos| WIN
+    %% Fluxo com maior espaçamento vertical
+    SUB --->|Emite Message| WIN
     WIN --->|Gerencia| CAL
     WIN --->|Gerencia| WEA
     WIN --->|Gerencia| TIM
