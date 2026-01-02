@@ -241,17 +241,23 @@ let tabs = custom_tab_widget();
 
 #### 🧩 Separação de Responsabilidades
 
+- **lib.rs**: Envelope de mensagens neutro (sem dependências)
 - **window.rs**: Gerenciamento de janela + orquestração de abas APENAS
 - **Módulos**: Propriedade completa de seu domínio (estado + lógica + view)
+- **subscriptions.rs**: Lógica assíncrona pesada (tempo, timezone, wake-from-sleep)
+- **time.rs**: Formatação de tempo do painel (PanelFormatter)
 - **Sem dependências entre módulos**: Módulos nunca importam uns aos outros
 
 #### 📦 Responsabilidade Única
 
 Cada arquivo tem UM propósito claro:
-- `window.rs` → Orquestração da janela popup
-- `time.rs` → Funcionalidade de calendário
+- `lib.rs` → Mensageiro Neutro (enums Message + Tab)
+- `window.rs` → Orquestração da janela popup (369 linhas, -48% da v0.1.0)
+- `calendar.rs` → Funcionalidade do calendário (estado + view + lógica)
+- `time.rs` → Formatação de tempo do painel (PanelFormatter)
+- `subscriptions.rs` → Gerenciamento de subscriptions (tick tempo, timezone, wake-from-sleep)
 - `config.rs` → Gerenciamento de configuração
-- `localize.rs` → Internacionalização
+- `localize.rs` → Internacionalização + detecção de locale do sistema
 
 ---
 
@@ -374,29 +380,34 @@ Esta otimização reduz o tempo do ciclo de desenvolvimento em **~60%** em build
 ```
 cosmic-applet-timeplus/
 ├── src/
-│   ├── main.rs       # Ponto de entrada
-│   ├── lib.rs        # Declarações de módulos
-│   ├── window.rs     # Applet principal (orquestração de abas)
-│   ├── config.rs     # Structs de configuração
-│   ├── localize.rs   # Sistema i18n
-│   ├── time.rs       # Módulo calendário (view + lógica)
-│   ├── weather.rs    # Módulo clima (placeholder)
-│   └── timer.rs      # Módulo timer (placeholder)
-├── i18n/             # Traduções (61 idiomas)
+│   ├── main.rs          # Ponto de entrada
+│   ├── lib.rs           # Mensageiro Neutro (Message + Tab enums)
+│   ├── window.rs        # Orquestrador (369 linhas, -48% da v0.1.0)
+│   ├── config.rs        # Structs de configuração
+│   ├── localize.rs      # Sistema i18n + detecção de locale do sistema
+│   ├── calendar.rs      # Módulo calendário (view + lógica + estado)
+│   ├── time.rs          # Formatação de tempo do painel (PanelFormatter)
+│   ├── subscriptions.rs # Gerenciamento de subscriptions (tempo, timezone, wake)
+│   ├── weather.rs       # Módulo clima (placeholder)
+│   └── timer.rs         # Módulo timer (placeholder)
+├── i18n/                # Traduções (61 idiomas)
 │   └── */cosmic_applet_timeplus.ftl
-├── screenshots/      # Capturas de tela da UI
+├── screenshots/         # Capturas de tela da UI
 │   ├── calendar.png
 │   ├── weather.png
 │   └── timer.png
-├── data/             # Arquivos desktop
-├── dev.sh            # Script helper de desenvolvimento
-├── create_i18n.sh    # Gerador de arquivos i18n
-└── TRANSLATIONS.md   # Status de traduções
+├── data/                # Arquivos desktop
+├── dev.sh               # Script helper de desenvolvimento
+├── create_i18n.sh       # Gerador de arquivos i18n
+└── TRANSLATIONS.md      # Status de traduções
 ```
 
-**Decisões Arquiteturais Chave:**
-- **Design Modular**: Cada aba tem seu próprio módulo (`time.rs`, `weather.rs`, `timer.rs`)
-- **Separação de Responsabilidades**: `window.rs` orquestra, módulos implementam
+**Decisões Arquiteturais Chave (v0.1.1):**
+- **Padrão Mensageiro Neutro**: `lib.rs` quebra dependências circulares
+- **Design Modular**: Cada aba tem seu próprio módulo (`calendar.rs`, `weather.rs`, `timer.rs`)
+- **Separação de Responsabilidades**: `window.rs` orquestra (369 linhas), módulos implementam
+- **Isolamento de Subscriptions**: Lógica assíncrona pesada em `subscriptions.rs` dedicado (166 linhas)
+- **Formatação de Painel**: `time.rs` dedicado com `PanelFormatter` (222 linhas)
 - **Sem Duplicação de Código**: Usa `cosmic::applet::padded_control` e padrões padrão
 - **Estrutura Consistente**: Todos os placeholders seguem o layout cabeçalho + conteúdo do calendário
 
@@ -464,15 +475,19 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] Seguir padrões do cosmic-applet-time oficial
 - [x] Compilação sem warnings
 
-### Fase 3: Refatoração de Infraestrutura 📍 *PRÓXIMA*
-- [ ] **Renomear** `time.rs` → `calendar.rs` (melhor clareza semântica)
-- [ ] **Mover** enums `Message` e `Tab` de `window.rs` para `lib.rs` (Mensageiro Neutro)
-- [ ] **Mover** `get_system_locale()` de `window.rs` para `localize.rs`
-- [ ] **Limpar** artefatos legados de notificações/testes do `window.rs`
-- [ ] **Centralizar** lógica do painel no módulo de calendário
-- [ ] Aplicar mesmo padrão de modularização para Clima e Timer
+### Fase 3: Refatoração de Infraestrutura ✅ *v0.1.1*
+- [x] **Renomear** `time.rs` → `calendar.rs` (melhor clareza semântica)
+- [x] **Mover** enums `Message` e `Tab` de `window.rs` para `lib.rs` (Mensageiro Neutro)
+- [x] **Mover** `get_system_locale()` de `window.rs` para `localize.rs`
+- [x] **Criar** `subscriptions.rs` para lógica assíncrona pesada (tempo, timezone, wake-from-sleep)
+- [x] **Criar** `time.rs` para formatação de painel (`PanelFormatter`)
+- [x] **Reduzir** `window.rs` de 704 para 369 linhas (-48%)
+- [x] **Corrigir** APP_ID para usar `com.system76.CosmicAppletTime` para sincronização de config
+- [x] **Corrigir** configuração de HourCycle para military_time
+- [x] **Corrigir** atualizações de configuração em tempo real (show_seconds, military_time)
+- [x] **Otimizar** formato de data para usar `MDT::medium` para melhor aproveitamento de espaço
 
-### Fase 4: Módulo de Clima 🌤️
+### Fase 4: Módulo de Clima 🌤️ *PRÓXIMA*
 - [ ] Integração com API OpenWeatherMap
 - [ ] Configuração de localização
 - [ ] Exibição de clima no popup
