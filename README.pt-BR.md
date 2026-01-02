@@ -144,43 +144,49 @@ Localizada no topo absoluto do container.
 
 O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + Módulos Especialistas** introduzida na v0.1.1:
 
-```
-┌─────────────────────────────────────────────┐
-│          lib.rs (Mensageiro Neutro)         │
-│  • Definição Global de Message e Tab        │
-│  • Ponto de união de todos os módulos       │
-│  • Sem lógica: apenas o "Dicionário"        │
-└─────────────────────────────────────────────┘
-          ▲                ▲                ▲
-          └────────┬───────┴────────┬───────┘
-                   │ (Tipos compartilhados)
-┌──────────────────┴──────────────────────────┐
-│          window.rs (Orquestrador)           │
-│  • Maestro: Coordena o Ciclo de Vida        │
-│  • Sistema de Abas e Navegação              │
-│  • Delegação para Especialistas             │
-│  • Reduzido para 369 linhas                 │
-└──────────────────┬──────────────────────────┘
-         ┌─────────┼─────────┬─────────┐
-         ▼         ▼         ▼         ▼
-    ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────────┐
-    │calendar│ │weather │ │ timer  │ │subscriptions │
-    │  .rs   │ │  .rs   │ │  .rs   │ │     .rs      │
-    │        │ │        │ │        │ │              │
-    │ Estado │ │ Estado │ │ Estado │ │ Time Tick    │
-    │ Logic  │ │ Logic  │ │ Logic  │ │ Timezone     │
-    │ View   │ │ View   │ │ View   │ │ Wake-sleep   │
-    └────────┘ └────────┘ └────────┘ └──────┬───────┘
-         ▲         ▲         ▲              │
-         └─────────┼─────────┴──────────────┘
-                   │ (Envia mensagens)
-                   ▼
-    ┌───────────────────────────────┐
-    │           time.rs             │
-    │  (Formatador do Painel/Clock) │
-    │  • Independente de Abas       │
-    │  • Usado pelo Orquestrador    │
-    └───────────────────────────────┘
+```mermaind
+graph TD
+    %% Estilos de Cores
+    classDef neutral fill:#2d333b,stroke:#adbac7,color:#adbac7,stroke-width:2px;
+    classDef orchestrator fill:#1e4273,stroke:#58a6ff,color:#fff,stroke-width:4px;
+    classDef module fill:#238636,stroke:#2ea043,color:#fff;
+    classDef logic fill:#d29922,stroke:#e3b341,color:#000;
+
+    subgraph "Infraestrutura Base"
+        LIB(lib.rs<br/>Mensageiro Neutro):::neutral
+    end
+
+    subgraph "Entrada de Eventos"
+        SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
+    end
+
+    subgraph "Lógica Principal"
+        WIN(window.rs<br/>Orquestrador):::orchestrator
+    end
+
+    subgraph "Módulos Especialistas"
+        CAL(calendar.rs<br/>Calendário):::module
+        WEA(weather.rs<br/>Clima):::module
+        TIM(timer.rs<br/>Timer):::module
+    end
+
+    subgraph "Utilitários Compartilhados"
+        TIME(time.rs<br/>Formatador do Painel):::logic
+    end
+
+    %% Fluxo de Dados
+    SUB -->|Emite Message| WIN
+    WIN -->|Delega View| CAL
+    WIN -->|Delega View| WEA
+    WIN -->|Delega View| TIM
+    WIN -->|Usa| TIME
+
+    %% Relação com o Mensageiro (Tipos)
+    CAL -.->|Referencia Tipos| LIB
+    WEA -.->|Referencia Tipos| LIB
+    TIM -.->|Referencia Tipos| LIB
+    WIN -.->|Referencia Tipos| LIB
+    TIME -.->|Referencia Tipos| LIB
 ```
 
 ### Padrão de Envelope de Mensagens
