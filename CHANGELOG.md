@@ -13,6 +13,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date-based reminders system
 - Desktop notifications
 
+## [0.1.1] - 2026-01-02
+
+### Added
+- Neutral Messenger pattern for better modularity (`lib.rs`)
+- `subscriptions.rs` module (166 lines) for subscription management
+- `time.rs` module (222 lines) for panel time formatting with `PanelFormatter`
+- Pre-commit hooks for automatic code quality checks (`cargo fmt`, `cargo clippy`)
+- Explicit HourCycle configuration for proper 24h/12h format handling
+
+### Changed
+- Reduced `window.rs` from 704 to 369 lines (-48% reduction)
+- Improved date format to use `MDT::medium` for better space usage ("2 de jan., 02:39")
+- Refactored architecture to Orchestrator + Specialist Modules pattern
+
+### Fixed
+- APP_ID now uses `com.system76.CosmicAppletTime` for proper config synchronization
+- Real-time configuration updates for `show_seconds` setting
+- Real-time configuration updates for `military_time` (24h/12h) setting
+- HourCycle properly applied based on `military_time` configuration
+
+### Performance
+- Zero compilation warnings
+- Excellent runtime performance (30MB RAM, <1% CPU idle)
+- All functional tests passing
+
+
 ## [0.1.0] - 2026-01-01
 
 ### Added
@@ -71,6 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/defNickTCys/cosmic-applet-timeplus/releases/tag/v0.1.0
 [0.0.1]: https://github.com/defNickTCys/cosmic-applet-timeplus/releases/tag/v0.0.1
+
