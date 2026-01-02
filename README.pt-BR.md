@@ -146,43 +146,53 @@ O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + 
 
 ```mermaid
 graph TD
-    %% Estilos de Cores e Transparência
+    %% Definições de Estilo
     classDef neutral fill:#2d333b,stroke:#adbac7,color:#adbac7,stroke-width:2px;
     classDef orchestrator fill:#1e4273,stroke:#58a6ff,color:#fff,stroke-width:4px;
     classDef module fill:#238636,stroke:#2ea043,color:#fff;
     classDef logic fill:#d29922,stroke:#e3b341,color:#000;
+    
+    %% Estilo para Títulos Flutuantes (Invisíveis)
+    classDef header fill:none,stroke:none,color:#adbac7,font-weight:bold,font-size:16px;
 
-    %% Estilo para os Cards (Subgraphs)
-    style Infra fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
-    style Eventos fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
-    style Principal fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
-    style Modulos fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
-    style Utils fill:#333,fill-opacity:0.2,stroke:#555,stroke-dasharray: 5 5
+    %% Títulos como Nós Independentes
+    T1(Infraestrutura Base):::header
+    T2(Entrada de Eventos):::header
+    T3(Lógica Principal):::header
+    T4(Módulos Especialistas):::header
+    T5(Utilitários Compartilhados):::header
 
-    subgraph Infra ["<br/>Infraestrutura Base<br/>"]
+    subgraph Infra [ ]
         LIB(lib.rs<br/>Mensageiro Neutro):::neutral
     end
 
-    subgraph Eventos ["<br/>Entrada de Eventos<br/>"]
+    subgraph Eventos [ ]
         SUB(subscriptions.rs<br/>Sensores do Sistema):::logic
     end
 
-    subgraph Principal ["<br/>Lógica Principal<br/>"]
+    subgraph Principal [ ]
         WIN(window.rs<br/>Orquestrador):::orchestrator
     end
 
-    subgraph Modulos ["<br/>Módulos Especialistas<br/>"]
+    subgraph Modulos [ ]
         CAL(calendar.rs<br/>Calendário):::module
         WEA(weather.rs<br/>Clima):::module
         TIM(timer.rs<br/>Timer):::module
     end
 
-    subgraph Utils ["<br/>Utilitários Compartilhados<br/>"]
+    subgraph Utils [ ]
         TIME(time.rs<br/>Formatador Painel):::logic
         LOC(localize.rs<br/>Localização):::logic
     end
 
-    %% Fluxo de Dados com maior distanciamento
+    %% Conexões de Títulos (Força o posicionamento acima)
+    T1 --- LIB
+    T2 --- SUB
+    T3 --- WIN
+    T4 --- CAL
+    T5 --- TIME
+
+    %% Fluxo de Dados com Setas Longas
     SUB --->|Emite Eventos| WIN
     WIN --->|Gerencia| CAL
     WIN --->|Gerencia| WEA
@@ -190,13 +200,12 @@ graph TD
     WIN --->|Usa| TIME
     WIN --->|Detecta Locale| LOC
 
-    %% Dependência de Tipos (lib.rs como fundação)
-    CAL -.->|Tipos| LIB
-    WEA -.->|Tipos| LIB
-    TIM -.->|Tipos| LIB
-    WIN -.->|Tipos| LIB
-    TIME -.->|Tipos| LIB
-    LOC -.->|Tipos| LIB
+    %% Estilo dos Containers (Transparentes e Tracejados)
+    style Infra fill:#333,fill-opacity:0.1,stroke:#555,stroke-dasharray: 5 5
+    style Eventos fill:#333,fill-opacity:0.1,stroke:#555,stroke-dasharray: 5 5
+    style Principal fill:#333,fill-opacity:0.1,stroke:#555,stroke-dasharray: 5 5
+    style Modulos fill:#333,fill-opacity:0.1,stroke:#555,stroke-dasharray: 5 5
+    style Utils fill:#333,fill-opacity:0.1,stroke:#555,stroke-dasharray: 5 5
 ```
 
 ### Padrão de Envelope de Mensagens
