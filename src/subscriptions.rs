@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 //! Subscription management module
-//! 
+//!
 //! This module handles all heavy subscription logic for the applet,
 //! including time ticking, timezone updates, and wake-from-sleep detection.
 
 use chrono::Timelike;
 use cosmic::{
+    iced::futures::{channel::mpsc, SinkExt, StreamExt},
     iced::Subscription,
     iced_futures::stream,
-    iced::futures::{SinkExt, StreamExt, channel::mpsc},
 };
 use logind_zbus::manager::ManagerProxy;
 use timedate_zbus::TimeDateProxy;
@@ -23,7 +23,7 @@ use crate::Message;
 // ============================================================================
 
 /// Time ticking subscription
-/// 
+///
 /// Manages the applet's time updates, supporting both per-second and per-minute
 /// ticking based on the show_seconds configuration.
 pub fn time_subscription(mut show_seconds: watch::Receiver<bool>) -> Subscription<Message> {
@@ -100,15 +100,13 @@ async fn timezone_update(output: &mut mpsc::Sender<Message>) -> zbus::Result<()>
         output
             .send(Message::TimezoneUpdate(tz))
             .await
-            .map_err(|e| {
-                zbus::Error::InputOutput(std::sync::Arc::new(std::io::Error::other(e)))
-            })?;
+            .map_err(|e| zbus::Error::InputOutput(std::sync::Arc::new(std::io::Error::other(e))))?;
     }
     Ok(())
 }
 
 /// Timezone change subscription
-/// 
+///
 /// Monitors system timezone changes and updates the applet accordingly.
 pub fn timezone_subscription() -> Subscription<Message> {
     Subscription::run_with_id(
@@ -151,7 +149,7 @@ async fn wake_from_sleep(output: &mut mpsc::Sender<Message>) -> zbus::Result<()>
 }
 
 /// Wake from sleep subscription
-/// 
+///
 /// Detects when the system wakes from sleep and triggers a time update.
 pub fn wake_from_sleep_subscription() -> Subscription<Message> {
     Subscription::run_with_id(

@@ -1,31 +1,28 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
-use cosmic::widget::Id;
 use cosmic::widget::segmented_button;
+use cosmic::widget::Id;
 use cosmic::{
-    Element, Task, app,
+    app,
     applet::{cosmic_panel_config::PanelAnchor, menu_button, padded_control},
     cctk::sctk::reexports::calloop,
     cosmic_theme::Spacing,
     iced::{
-        Rectangle, Subscription,
         platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup},
         widget::column,
-        window,
+        window, Rectangle, Subscription,
     },
     theme,
-    widget::{
-        autosize, button, container, divider, icon,
-        rectangle_tracker::*, text,
-    },
+    widget::{autosize, button, container, divider, icon, rectangle_tracker::*, text},
+    Element, Task,
 };
 use std::sync::LazyLock;
 use tokio::sync::watch;
 
 use crate::{config::TimeAppletConfig, fl};
 use cosmic::applet::token::subscription::{
-    TokenRequest, TokenUpdate, activation_token_subscription,
+    activation_token_subscription, TokenRequest, TokenUpdate,
 };
 use icu::locale::Locale;
 
@@ -43,7 +40,7 @@ pub struct Window {
     now: chrono::DateTime<chrono::FixedOffset>,
     timezone: Option<chrono_tz::Tz>,
     calendar_state: crate::calendar::CalendarState,
-    panel_formatter: crate::time::PanelFormatter,  // Panel time formatter
+    panel_formatter: crate::time::PanelFormatter, // Panel time formatter
     rectangle_tracker: Option<RectangleTracker<u32>>,
     rectangle: Rectangle,
     token_tx: Option<calloop::channel::Sender<TokenRequest>>,
@@ -91,7 +88,7 @@ impl cosmic::Application for Window {
                     .data(Tab::Timer)
             })
             .build();
-        
+
         // Activate first tab
         tab_model.activate_position(0);
 
@@ -246,7 +243,8 @@ impl cosmic::Application for Window {
                 self.show_seconds_tx.send_if_modified(|show_seconds| {
                     if !c.format_strftime.is_empty() {
                         if c.format_strftime.split('%').any(|s| {
-                            crate::time::STRFTIME_SECONDS.contains(&s.chars().next().unwrap_or_default())
+                            crate::time::STRFTIME_SECONDS
+                                .contains(&s.chars().next().unwrap_or_default())
                         }) && !*show_seconds
                         {
                             // The strftime formatter contains a seconds specifier. Force enable
@@ -293,9 +291,11 @@ impl cosmic::Application for Window {
         );
 
         let button = button::custom(if horizontal {
-            self.panel_formatter.horizontal_layout(&self.now, &self.config, &self.core.applet)
+            self.panel_formatter
+                .horizontal_layout(&self.now, &self.config, &self.core.applet)
         } else {
-            self.panel_formatter.vertical_layout(&self.now, &self.config, &self.core.applet)
+            self.panel_formatter
+                .vertical_layout(&self.now, &self.config, &self.core.applet)
         })
         .padding(if horizontal {
             [0, self.core.applet.suggested_padding(true).0]
@@ -311,7 +311,7 @@ impl cosmic::Application for Window {
             } else {
                 button.into()
             },
-                    AUTOSIZE_MAIN_ID.clone(),
+            AUTOSIZE_MAIN_ID.clone(),
         )
         .into()
     }
@@ -324,11 +324,11 @@ impl cosmic::Application for Window {
         // Tab navigation - matches system separator width with padding
         let tabs = container(
             segmented_button::horizontal(&self.tab_model)
-                .button_spacing(space_xxs)  // Spacing between icon and text
-                .button_padding([space_xxs, space_s, space_xxs, space_s])  // Symmetric padding (top, right, bottom, left)
-                .on_activate(Message::TabActivated)
+                .button_spacing(space_xxs) // Spacing between icon and text
+                .button_padding([space_xxs, space_s, space_xxs, space_s]) // Symmetric padding (top, right, bottom, left)
+                .on_activate(Message::TabActivated),
         )
-        .padding([0, space_s]);  // Horizontal padding to match separator
+        .padding([0, space_s]); // Horizontal padding to match separator
 
         // Select view based on active tab
         let tab_content = match self.selected_tab {
@@ -337,7 +337,8 @@ impl cosmic::Application for Window {
                 &self.calendar_state,
                 &self.now,
                 self.config.first_day_of_week,
-            ).map(Message::Calendar),
+            )
+            .map(Message::Calendar),
             Tab::Weather => crate::weather::view_weather(),
             Tab::Timer => crate::timer::view_timer(),
         };
@@ -349,12 +350,7 @@ impl cosmic::Application for Window {
                 .on_press(Message::OpenDateTimeSettings),
         ];
 
-        let content_list = column![
-            tabs,
-            tab_content,
-            footer,
-        ]
-        .padding([8, 0]);
+        let content_list = column![tabs, tab_content, footer,].padding([8, 0]);
 
         self.core
             .applet
@@ -366,4 +362,3 @@ impl cosmic::Application for Window {
         Some(Message::CloseRequested(id))
     }
 }
-

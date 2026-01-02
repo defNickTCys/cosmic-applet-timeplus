@@ -1,13 +1,13 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
+mod calendar; // Calendar module (renamed from time)
 mod config;
 mod localize;
-mod calendar;  // Calendar module (renamed from time)
-mod time;      // Panel time formatting module (new)
-mod subscriptions;  // Subscription management (time, timezone, wake-from-sleep)
-mod weather;
+mod subscriptions; // Subscription management (time, timezone, wake-from-sleep)
+mod time; // Panel time formatting module (new)
 mod timer;
+mod weather;
 mod window;
 
 use window::Window;
@@ -19,13 +19,8 @@ use window::Window;
 // Each module has its own message type that gets wrapped in this envelope,
 // preventing circular dependencies and allowing modules to be self-contained.
 
-use cosmic::{
-    widget::segmented_button,
-    applet::token::subscription::TokenUpdate,
-};
-use crate::{
-    config::TimeAppletConfig,
-};
+use crate::config::TimeAppletConfig;
+use cosmic::{applet::token::subscription::TokenUpdate, widget::segmented_button};
 
 /// Global message envelope - accessible by all modules
 #[derive(Debug, Clone)]
@@ -36,10 +31,10 @@ pub enum Message {
     Tick,
     Rectangle(cosmic::widget::rectangle_tracker::RectangleUpdate<u32>),
     TabActivated(segmented_button::Entity),
-    
+
     // Module envelopes
     Calendar(calendar::CalendarMessage),
-    
+
     // System
     OpenDateTimeSettings,
     Token(TokenUpdate),

@@ -3,17 +3,18 @@
 
 use chrono::{Datelike, Days, NaiveDate, Timelike, Weekday};
 use cosmic::{
-    Apply, Element,
     iced::{
-        Alignment, Length,
         widget::{column, row},
+        Alignment, Length,
     },
-    widget::{self, Button, Grid, button, container, grid, text},
+    widget::{self, button, container, grid, text, Button, Grid},
+    Apply, Element,
 };
 use icu::{
     datetime::{
-        DateTimeFormatter, DateTimeFormatterPreferences, fieldsets,
+        fieldsets,
         input::{Date, DateTime, Time},
+        DateTimeFormatter, DateTimeFormatterPreferences,
     },
     locale::Locale,
 };
@@ -43,13 +44,13 @@ impl CalendarState {
             date_selected: today,
         }
     }
-    
+
     /// Reset calendar to today's date
     pub fn reset_to_today(&mut self, now: chrono::DateTime<chrono::FixedOffset>) {
         self.date_today = NaiveDate::from(now.naive_local());
         self.date_selected = self.date_today;
     }
-    
+
     /// Update calendar state based on message
     pub fn update(&mut self, message: CalendarMessage) {
         match message {
@@ -61,14 +62,20 @@ impl CalendarState {
                 }
             }
             CalendarMessage::PreviousMonth => {
-                if let Some(date) = self.date_selected.checked_sub_months(chrono::Months::new(1)) {
+                if let Some(date) = self
+                    .date_selected
+                    .checked_sub_months(chrono::Months::new(1))
+                {
                     self.date_selected = date;
                 } else {
                     tracing::error!("invalid naivedate");
                 }
             }
             CalendarMessage::NextMonth => {
-                if let Some(date) = self.date_selected.checked_add_months(chrono::Months::new(1)) {
+                if let Some(date) = self
+                    .date_selected
+                    .checked_add_months(chrono::Months::new(1))
+                {
                     self.date_selected = date;
                 } else {
                     tracing::error!("invalid naivedate");
@@ -102,22 +109,23 @@ fn get_calendar_first(year: i32, month: u32, from_weekday: Weekday) -> NaiveDate
 }
 
 /// Creates an ICU DateTime from a chrono date and time components
-pub fn create_datetime<D: Datelike, T: Timelike>(date: &D, now: &T) -> DateTime<icu::calendar::Gregorian> {
+pub fn create_datetime<D: Datelike, T: Timelike>(
+    date: &D,
+    now: &T,
+) -> DateTime<icu::calendar::Gregorian> {
     DateTime {
-        date: Date::try_new_gregorian(date.year(), date.month() as u8, date.day() as u8)
-            .unwrap(),
-        time: Time::try_new(
-            now.hour() as u8,
-            now.minute() as u8,
-            now.second() as u8,
-            0,
-        )
-        .unwrap(),
+        date: Date::try_new_gregorian(date.year(), date.month() as u8, date.day() as u8).unwrap(),
+        time: Time::try_new(now.hour() as u8, now.minute() as u8, now.second() as u8, 0).unwrap(),
     }
 }
 
 /// Creates a styled button for a calendar day
-fn date_button(day: u32, is_month: bool, is_day: bool, is_today: bool) -> Button<'static, CalendarMessage> {
+fn date_button(
+    day: u32,
+    is_month: bool,
+    is_day: bool,
+    is_today: bool,
+) -> Button<'static, CalendarMessage> {
     let style = if is_day {
         button::ButtonClass::Suggested
     } else if is_today {
@@ -150,8 +158,8 @@ fn calendar_grid<'a, T: Timelike>(
     first_day_of_week: u8,
 ) -> Grid<'a, CalendarMessage> {
     let mut calendar: Grid<'a, CalendarMessage> = grid().width(Length::Fill);
-    let mut first_day_of_week = chrono::Weekday::try_from(first_day_of_week)
-        .unwrap_or(chrono::Weekday::Sun);
+    let mut first_day_of_week =
+        chrono::Weekday::try_from(first_day_of_week).unwrap_or(chrono::Weekday::Sun);
 
     let first_day = get_calendar_first(
         calendar_state.date_selected.year(),
@@ -207,24 +215,15 @@ pub fn view_calendar<'a, T: Timelike>(
     first_day_of_week: u8,
 ) -> Element<'a, CalendarMessage> {
     let datetime = create_datetime(&calendar_state.date_selected, now);
-    
+
     // Create formatters once for this render (following cosmic-applet-time pattern)
     let prefs = DateTimeFormatterPreferences::from(locale.clone());
     let date_formatter = DateTimeFormatter::try_new(prefs, fieldsets::YMD::long()).unwrap();
     let weekday_formatter = DateTimeFormatter::try_new(prefs, fieldsets::E::long()).unwrap();
 
-    let date = text(
-        date_formatter
-            .format(&datetime)
-            .to_string(),
-    )
-    .size(18);
-    
-    let day_of_week = text::body(
-        weekday_formatter
-            .format(&datetime)
-            .to_string(),
-    );
+    let date = text(date_formatter.format(&datetime).to_string()).size(18);
+
+    let day_of_week = text::body(weekday_formatter.format(&datetime).to_string());
 
     let month_controls = row![
         button::icon(widget::icon::from_name("go-previous-symbolic"))
@@ -236,12 +235,7 @@ pub fn view_calendar<'a, T: Timelike>(
     ]
     .spacing(8);
 
-    let calendar = calendar_grid(
-        locale,
-        calendar_state,
-        now,
-        first_day_of_week,
-    );
+    let calendar = calendar_grid(locale, calendar_state, now, first_day_of_week);
 
     column![
         row![
@@ -255,4 +249,3 @@ pub fn view_calendar<'a, T: Timelike>(
     ]
     .into()
 }
-

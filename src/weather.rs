@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use cosmic::{
-    Element,
     applet::padded_control,
     cosmic_theme::Spacing,
     iced::{Alignment, Length},
     widget::{column, container, divider, icon, row, text, Space},
+    Element,
 };
 
-use crate::Message;
 use crate::fl;
+use crate::Message;
 
 /// Weather tab placeholder view
 pub fn view_weather<'a>() -> Element<'a, Message> {
@@ -19,12 +19,10 @@ pub fn view_weather<'a>() -> Element<'a, Message> {
     } = cosmic::theme::active().cosmic().spacing;
 
     let weather_icon: cosmic::widget::Icon = icon::from_name("weather-clear-symbolic")
-        .size(24)  // Smaller to match calendar header height
+        .size(24) // Smaller to match calendar header height
         .into();
-    
-    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic")
-        .size(16)
-        .into();
+
+    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic").size(16).into();
 
     // Match calendar structure: header + content (2 elements)
     column()
@@ -35,11 +33,11 @@ pub fn view_weather<'a>() -> Element<'a, Message> {
                 .push(Space::with_width(Length::Fixed(12.0)))
                 .push(
                     column()
-                        .push(text(fl!("weather")).size(18))  // Match calendar date size
-                        .push(text::body(fl!("weather-subtitle")))  // Match calendar day_of_week
+                        .push(text(fl!("weather")).size(18)) // Match calendar date size
+                        .push(text::body(fl!("weather-subtitle"))), // Match calendar day_of_week
                 )
                 .align_y(Alignment::Center)
-                .padding([12, 20])  // Match calendar HEADER_PADDING
+                .padding([12, 20]), // Match calendar HEADER_PADDING
         )
         // Standard separator
         .push(padded_control(divider::horizontal::default()).padding([space_xxs, space_s]))
@@ -54,15 +52,21 @@ pub fn view_weather<'a>() -> Element<'a, Message> {
                             .push(features_icon)
                             .push(Space::with_width(Length::Fixed(8.0)))
                             .push(text::heading(fl!("weather-placeholder-features")))
-                            .align_y(Alignment::Center)
+                            .align_y(Alignment::Center),
                     )
                     .push(Space::with_height(Length::Fixed(8.0)))
-                    .push(text::body("• ".to_string() + &fl!("weather-feature-current")))
-                    .push(text::body("• ".to_string() + &fl!("weather-feature-temperature")))
-                    .push(text::body("• ".to_string() + &fl!("weather-feature-forecast")))
-                    .spacing(4)
+                    .push(text::body(
+                        "• ".to_string() + &fl!("weather-feature-current"),
+                    ))
+                    .push(text::body(
+                        "• ".to_string() + &fl!("weather-feature-temperature"),
+                    ))
+                    .push(text::body(
+                        "• ".to_string() + &fl!("weather-feature-forecast"),
+                    ))
+                    .spacing(4),
             )
-            .padding([0, 20])  // Match header horizontal padding for alignment
+            .padding([0, 20]), // Match header horizontal padding for alignment
         )
         .into()
 }

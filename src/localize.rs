@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use i18n_embed::{
+    fluent::{fluent_language_loader, FluentLanguageLoader},
     DefaultLocalizer, LanguageLoader, Localizer,
-    fluent::{FluentLanguageLoader, fluent_language_loader},
 };
 use rust_embed::RustEmbed;
 use std::sync::LazyLock;
@@ -54,7 +54,7 @@ pub fn localize() {
 use icu::locale::Locale;
 
 /// Get system locale from environment variables
-/// 
+///
 /// Checks LC_TIME, LC_ALL, and LANG environment variables in order,
 /// attempting to parse each as an ICU locale. Falls back to en-US if
 /// no valid locale is found.
