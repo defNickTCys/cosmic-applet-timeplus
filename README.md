@@ -23,7 +23,7 @@
 
 ## 📸 Screenshots
 
-*All screenshots captured from **v0.1.1** running on COSMIC Desktop (Fedora Linux 43)*
+*All screenshots captured from **v0.1.2** running on COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Tab Navigation System</summary>
@@ -140,9 +140,9 @@ Located at the absolute top of the container.
 
 ## 🏗️ Software Architecture
 
-### Neutral Messenger + Orchestrator Pattern
+### Layered Architecture (v0.1.2)
 
-Time Plus follows a clean **Neutral Messenger + Orchestrator + Specialist Modules** architecture introduced in v0.1.1:
+Time Plus follows a clean **Layered Architecture** with clear separation of concerns introduced across v0.1.1 and v0.1.2:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -154,33 +154,35 @@ Time Plus follows a clean **Neutral Messenger + Orchestrator + Specialist Module
                      │
                      ▼
 ┌─────────────────────────────────────────────┐
-│           window.rs (Orchestrator)          │
-│  • Manages popup window lifecycle           │
-│  • Handles tab navigation system            │
-│  • Delegates to specialist modules          │
-│  • NO business logic (369 lines)            │
+│         window.rs (Orchestrator)            │
+│  • Manages application lifecycle            │
+│  • Handles state and messages               │
+│  • Delegates ALL UI to UI Layer             │
+│  • ZERO inline widgets (334 lines)          │
 └─────────────────────────────────────────────┘
-                     │
-         ┌───────────┼───────────┬──────────────┐
-         ▼           ▼           ▼              ▼
-    ┌──────────┐ ┌────────┐ ┌────────┐  ┌──────────────┐
-    │calendar  │ │weather │ │ timer  │  │subscriptions │
-    │  .rs     │ │  .rs   │ │  .rs   │  │    .rs       │
-    │          │ │        │ │        │  │              │
-    │ State    │ │ State  │ │ State  │  │ Time tick    │
-    │ Message  │ │ Message│ │ Message│  │ Timezone     │
-    │ update   │ │ update │ │ update │  │ Wake-sleep   │
-    │ view     │ │ view   │ │ view   │  │              │
-    └──────────┘ └────────┘ └────────┘  └──────────────┘
-         │
-         ▼
-    ┌──────────┐
-    │  time.rs │
-    │          │
-    │ Panel    │
-    │ Formatter│
-    │          │
-    └──────────┘
+          │                        │
+          ▼                        ▼
+    [Core UI Layer]          [Features]
+  ┌──────────────────┐    ┌──────────────┐
+  │    panel.rs      │    │ calendar.rs  │
+  │  Panel button    │    │   State      │
+  │  (195 lines)     │    │   Messages   │
+  └──────────────────┘    │   View       │
+  ┌──────────────────┐    └──────────────┘
+  │    popup.rs      │    ┌──────────────┐
+  │  Popup window    │    │ weather.rs   │
+  │  Tab navigation  │    │   (Ready)    │
+  │  (83 lines)      │    └──────────────┘
+  └──────────────────┘    ┌──────────────┐
+          │               │  timer.rs    │
+          ▼               │   (Ready)    │
+    [Utilities]           └──────────────┘
+  ┌──────────────────┐           │
+  │    time.rs       │           ▼
+  │  Pure formatter  │    ┌──────────────┐
+  │  (84 lines)      │    │subscriptions │
+  │  NO UI deps      │    │   .rs        │
+  └──────────────────┘    └──────────────┘
 ```
 
 ### Message Envelope Pattern
@@ -239,23 +241,37 @@ let tabs = segmented_button::horizontal(&self.tab_model)
 let tabs = custom_tab_widget();
 ```
 
-#### 🧩 Separation of Concerns
+#### 🧩 Separation of Concerns (v0.1.2)
 
+**Orchestration Layer:**
 - **lib.rs**: Neutral message envelope (no dependencies)
-- **window.rs**: Window management + tab orchestration ONLY
-- **Modules**: Complete ownership of their domain (state + logic + view)
-- **subscriptions.rs**: Heavy async logic (time, timezone, wake-from-sleep)
-- **time.rs**: Panel time formatting (PanelFormatter)
-- **No cross-module dependencies**: Modules never import each other
+- **window.rs**: Pure orchestrator (state, messages, lifecycle ONLY)
 
-#### 📦 Single Responsibility
+**Core UI Layer:** *(New in v0.1.2)*
+- **panel.rs**: Panel button rendering (vertical/horizontal layouts)
+- **popup.rs**: Popup window structure (tabs, content, footer)
+
+**Features Layer:**
+- **calendar.rs**, **weather.rs**, **timer.rs**: Domain-specific content
+- Complete ownership of their domain (state + logic + view)
+
+**Utilities Layer:**
+- **time.rs**: Pure data formatting (NO UI dependencies)
+- **subscriptions.rs**: Async subscriptions (time, timezone, wake)
+- **localize.rs**: Internationalization
+
+**No cross-module dependencies**: Modules never import each other
+
+#### 📦 Single Responsibility (v0.1.2)
 
 Each file has ONE clear purpose:
 - `lib.rs` → Neutral Messenger (Message + Tab enums)
-- `window.rs` → Popup window orchestration (369 lines, -48% from v0.1.0)
+- `window.rs` → Pure orchestrator (334 lines, -9% from v0.1.1)
+- **`panel.rs`** → Panel UI rendering (195 lines) *New in v0.1.2*
+- **`popup.rs`** → Popup UI structure (83 lines) *New in v0.1.2*
 - `calendar.rs` → Calendar functionality (state + view + logic)
-- `time.rs` → Panel time formatting (PanelFormatter)
-- `subscriptions.rs` → Subscription management (time tick, timezone, wake-from-sleep)
+- `time.rs` → Pure data formatting (84 lines, -62% from v0.1.1)
+- `subscriptions.rs` → Subscription management (time, timezone, wake)
 - `config.rs` → Configuration management
 - `localize.rs` → Internationalization + system locale detection
 
@@ -382,11 +398,13 @@ cosmic-applet-timeplus/
 ├── src/
 │   ├── main.rs          # Entry point
 │   ├── lib.rs           # Neutral Messenger (Message + Tab enums)
-│   ├── window.rs        # Orchestrator (369 lines, -48% from v0.1.0)
+│   ├── window.rs        # Pure Orchestrator (334 lines)
+│   ├── panel.rs         # Panel UI Layer (195 lines) [v0.1.2]
+│   ├── popup.rs         # Popup UI Layer (83 lines) [v0.1.2]
 │   ├── config.rs        # Configuration structs
 │   ├── localize.rs      # i18n system + system locale detection
 │   ├── calendar.rs      # Calendar module (view + logic + state)
-│   ├── time.rs          # Panel time formatting (PanelFormatter)
+│   ├── time.rs          # Pure formatting utilities (84 lines)
 │   ├── subscriptions.rs # Subscription management (time, timezone, wake)
 │   ├── weather.rs       # Weather module (placeholder)
 │   └── timer.rs         # Timer module (placeholder)
@@ -402,12 +420,14 @@ cosmic-applet-timeplus/
 └── TRANSLATIONS.md      # Translation status
 ```
 
-**Key Architectural Decisions (v0.1.1):**
+**Key Architectural Decisions (v0.1.2):**
+- **Layered Architecture**: Clear separation between Orchestration, UI, Features, and Utilities
+- **Core UI Layer**: Dedicated `panel.rs` and `popup.rs` for all UI construction (v0.1.2)
+- **Pure Orchestrator**: `window.rs` has ZERO inline widgets (334 lines)
+- **Pure Utilities**: `time.rs` has ZERO UI dependencies (84 lines)
 - **Neutral Messenger Pattern**: `lib.rs` breaks circular dependencies
 - **Modular Design**: Each tab has its own module (`calendar.rs`, `weather.rs`, `timer.rs`)
-- **Separation of Concerns**: `window.rs` orchestrates (369 lines), modules implement
 - **Subscription Isolation**: Heavy async logic in dedicated `subscriptions.rs` (166 lines)
-- **Panel Formatting**: Dedicated `time.rs` with `PanelFormatter` (222 lines)
 - **No Code Duplication**: Uses `cosmic::applet::padded_control` and standard patterns
 - **Consistent Structure**: All placeholders match calendar's header + content layout
 
@@ -487,6 +507,16 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Fix** HourCycle configuration for military_time
 - [x] **Fix** Real-time configuration updates (show_seconds, military_time)
 - [x] **Optimize** Date format to use `MDT::medium` for better space usage
+
+### Phase 3.8: UI Architecture & Separation ✅ *v0.1.2*
+- [x] **Create** Core UI Layer (`panel.rs`, `popup.rs`)
+- [x] **Extract** panel layout logic from `time.rs` to `panel.rs` (195 lines)
+- [x] **Extract** popup structure from `window.rs` to `popup.rs` (83 lines)
+- [x] **Purify** `time.rs` - removed ALL UI dependencies (84 lines, -62%)
+- [x] **Simplify** `window.rs` - pure orchestrator (334 lines, -9%)
+- [x] **Achieve** 100% separation of concerns (UI, Orchestration, Utilities, Features)
+- [x] **Preserve** all visual logic (zero UI/UX changes)
+- [x] **Maintain** zero compilation warnings and clippy errors
 
 ### Phase 4: Weather Module 🌤️ *NEXT*
 - [ ] OpenWeatherMap API integration

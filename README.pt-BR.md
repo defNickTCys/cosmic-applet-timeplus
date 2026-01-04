@@ -23,7 +23,7 @@
 
 ## 📸 Capturas de Tela
 
-*Todas as capturas de tela da **v0.1.1** executando no COSMIC Desktop (Fedora Linux 43)*
+*Todas as capturas de tela da **v0.1.2** executando no COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Sistema de Navegação por Abas</summary>
@@ -140,9 +140,9 @@ Localizada no topo absoluto do container.
 
 ## 🏗️ Arquitetura de Software
 
-### Padrão Mensageiro Neutro + Orquestrador
+### Arquitetura em Camadas (v0.1.2)
 
-O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + Módulos Especialistas** introduzida na v0.1.1:
+O Time Plus segue uma **Arquitetura em Camadas** limpa com clara separação de responsabilidades introduzida ao longo das v0.1.1 e v0.1.2:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -154,33 +154,35 @@ O Time Plus segue uma arquitetura limpa de **Mensageiro Neutro + Orquestrador + 
                      │
                      ▼
 ┌─────────────────────────────────────────────┐
-│           window.rs (Orquestrador)          │
-│  • Gerencia ciclo de vida da janela popup   │
-│  • Controla sistema de navegação por abas   │
-│  • Delega para módulos especialistas        │
-│  • SEM lógica de negócio (369 linhas)       │
+│         window.rs (Orquestrador)            │
+│  • Gerencia ciclo de vida da aplicação      │
+│  • Controla estado e mensagens              │
+│  • Delega TODA UI para Camada UI            │
+│  • ZERO widgets inline (334 linhas)         │
 └─────────────────────────────────────────────┘
-                     │
-         ┌───────────┼───────────┬──────────────┐
-         ▼           ▼           ▼              ▼
-    ┌──────────┐ ┌────────┐ ┌────────┐  ┌──────────────┐
-    │calendar  │ │weather │ │ timer  │  │subscriptions │
-    │  .rs     │ │  .rs   │ │  .rs   │  │    .rs       │
-    │          │ │        │ │        │  │              │
-    │ Estado   │ │ Estado │ │ Estado │  │ Tick tempo   │
-    │ Mensagem │ │Mensagem│ │Mensagem│  │ Timezone     │
-    │ update   │ │ update │ │ update │  │ Wake-sleep   │
-    │ view     │ │ view   │ │ view   │  │              │
-    └──────────┘ └────────┘ └────────┘  └──────────────┘
-         │
-         ▼
-    ┌──────────┐
-    │  time.rs │
-    │          │
-    │ Formatador│
-    │  Painel  │
-    │          │
-    └──────────┘
+          │                        │
+          ▼                        ▼
+    [Camada Core UI]          [Features]
+  ┌──────────────────┐    ┌──────────────┐
+  │    panel.rs      │    │ calendar.rs  │
+  │  Botão painel    │    │   Estado     │
+  │  (195 linhas)    │    │   Mensagens  │
+  └──────────────────┘    │   View       │
+  ┌──────────────────┐    └──────────────┘
+  │    popup.rs      │    ┌──────────────┐
+  │  Janela popup    │    │ weather.rs   │
+  │  Navegação abas  │    │   (Pronto)   │
+  │  (83 linhas)     │    └──────────────┘
+  └──────────────────┘    ┌──────────────┐
+          │               │  timer.rs    │
+          ▼               │   (Pronto)   │
+    [Utilitários]         └──────────────┘
+  ┌──────────────────┐           │
+  │    time.rs       │           ▼
+  │  Formatador puro │    ┌──────────────┐
+  │  (84 linhas)     │    │subscriptions │
+  │  SEM deps UI     │    │   .rs        │
+  └──────────────────┘    └──────────────┘
 ```
 
 ### Padrão de Envelope de Mensagens
@@ -239,23 +241,37 @@ let tabs = segmented_button::horizontal(&self.tab_model)
 let tabs = custom_tab_widget();
 ```
 
-#### 🧩 Separação de Responsabilidades
+#### 🧩 Separação de Responsabilidades (v0.1.2)
 
+**Camada de Orquestração:**
 - **lib.rs**: Envelope de mensagens neutro (sem dependências)
-- **window.rs**: Gerenciamento de janela + orquestração de abas APENAS
-- **Módulos**: Propriedade completa de seu domínio (estado + lógica + view)
-- **subscriptions.rs**: Lógica assíncrona pesada (tempo, timezone, wake-from-sleep)
-- **time.rs**: Formatação de tempo do painel (PanelFormatter)
-- **Sem dependências entre módulos**: Módulos nunca importam uns aos outros
+- **window.rs**: Orquestrador puro (estado, mensagens, ciclo de vida APENAS)
 
-#### 📦 Responsabilidade Única
+**Camada Core UI:** *(Nova na v0.1.2)*
+- **panel.rs**: Renderização do botão do painel (layouts vertical/horizontal)
+- **popup.rs**: Estrutura da janela popup (abas, conteúdo, rodapé)
+
+**Camada de Features:**
+- **calendar.rs**, **weather.rs**, **timer.rs**: Conteúdo específico do domínio
+- Propriedade completa de seu domínio (estado + lógica + view)
+
+**Camada de Utilitários:**
+- **time.rs**: Formatação pura de dados (SEM dependências de UI)
+- **subscriptions.rs**: Subscriptions assíncronas (tempo, timezone, wake)
+- **localize.rs**: Internacionalização
+
+**Sem dependências entre módulos**: Módulos nunca importam uns aos outros
+
+#### 📦 Responsabilidade Única (v0.1.2)
 
 Cada arquivo tem UM propósito claro:
 - `lib.rs` → Mensageiro Neutro (enums Message + Tab)
-- `window.rs` → Orquestração da janela popup (369 linhas, -48% da v0.1.0)
+- `window.rs` → Orquestrador puro (334 linhas, -9% da v0.1.1)
+- **`panel.rs`** → Renderização UI do painel (195 linhas) *Nova na v0.1.2*
+- **`popup.rs`** → Estrutura UI do popup (83 linhas) *Nova na v0.1.2*
 - `calendar.rs` → Funcionalidade do calendário (estado + view + lógica)
-- `time.rs` → Formatação de tempo do painel (PanelFormatter)
-- `subscriptions.rs` → Gerenciamento de subscriptions (tick tempo, timezone, wake-from-sleep)
+- `time.rs` → Formatação pura de dados (84 linhas, -62% da v0.1.1)
+- `subscriptions.rs` → Gerenciamento de subscriptions (tempo, timezone, wake)
 - `config.rs` → Gerenciamento de configuração
 - `localize.rs` → Internacionalização + detecção de locale do sistema
 
@@ -382,11 +398,13 @@ cosmic-applet-timeplus/
 ├── src/
 │   ├── main.rs          # Ponto de entrada
 │   ├── lib.rs           # Mensageiro Neutro (Message + Tab enums)
-│   ├── window.rs        # Orquestrador (369 linhas, -48% da v0.1.0)
+│   ├── window.rs        # Orquestrador Puro (334 linhas)
+│   ├── panel.rs         # Camada UI Painel (195 linhas) [v0.1.2]
+│   ├── popup.rs         # Camada UI Popup (83 linhas) [v0.1.2]
 │   ├── config.rs        # Structs de configuração
 │   ├── localize.rs      # Sistema i18n + detecção de locale do sistema
 │   ├── calendar.rs      # Módulo calendário (view + lógica + estado)
-│   ├── time.rs          # Formatação de tempo do painel (PanelFormatter)
+│   ├── time.rs          # Utilitários puros de formatação (84 linhas)
 │   ├── subscriptions.rs # Gerenciamento de subscriptions (tempo, timezone, wake)
 │   ├── weather.rs       # Módulo clima (placeholder)
 │   └── timer.rs         # Módulo timer (placeholder)
@@ -402,12 +420,14 @@ cosmic-applet-timeplus/
 └── TRANSLATIONS.md      # Status de traduções
 ```
 
-**Decisões Arquiteturais Chave (v0.1.1):**
+**Decisões Arquiteturais Chave (v0.1.2):**
+- **Arquitetura em Camadas**: Clara separação entre Orquestração, UI, Features e Utilitários
+- **Camada Core UI**: `panel.rs` e `popup.rs` dedicados para toda construção de UI (v0.1.2)
+- **Orquestrador Puro**: `window.rs` tem ZERO widgets inline (334 linhas)
+- **Utilitários Puros**: `time.rs` tem ZERO dependências de UI (84 linhas)
 - **Padrão Mensageiro Neutro**: `lib.rs` quebra dependências circulares
 - **Design Modular**: Cada aba tem seu próprio módulo (`calendar.rs`, `weather.rs`, `timer.rs`)
-- **Separação de Responsabilidades**: `window.rs` orquestra (369 linhas), módulos implementam
 - **Isolamento de Subscriptions**: Lógica assíncrona pesada em `subscriptions.rs` dedicado (166 linhas)
-- **Formatação de Painel**: `time.rs` dedicado com `PanelFormatter` (222 linhas)
 - **Sem Duplicação de Código**: Usa `cosmic::applet::padded_control` e padrões padrão
 - **Estrutura Consistente**: Todos os placeholders seguem o layout cabeçalho + conteúdo do calendário
 
@@ -486,6 +506,16 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] **Corrigir** configuração de HourCycle para military_time
 - [x] **Corrigir** atualizações de configuração em tempo real (show_seconds, military_time)
 - [x] **Otimizar** formato de data para usar `MDT::medium` para melhor aproveitamento de espaço
+
+### Fase 3.8: Arquitetura UI & Separação ✅ *v0.1.2*
+- [x] **Criar** Camada Core UI (`panel.rs`, `popup.rs`)
+- [x] **Extrair** lógica de layout do painel de `time.rs` para `panel.rs` (195 linhas)
+- [x] **Extrair** estrutura do popup de `window.rs` para `popup.rs` (83 linhas)
+- [x] **Purificar** `time.rs` - removidas TODAS as dependências de UI (84 linhas, -62%)
+- [x] **Simplificar** `window.rs` - orquestrador puro (334 linhas, -9%)
+- [x] **Alcançar** 100% de separação de responsabilidades (UI, Orquestração, Utilitários, Features)
+- [x] **Preservar** toda lógica visual (zero mudanças de UI/UX)
+- [x] **Manter** zero warnings de compilação e erros do clippy
 
 ### Fase 4: Módulo de Clima 🌤️ *PRÓXIMA*
 - [ ] Integração com API OpenWeatherMap
