@@ -5,6 +5,7 @@ mod calendar; // Calendar module (renamed from time)
 mod config;
 mod localize;
 mod panel; // Panel UI module
+mod popup; // Popup UI module
 mod subscriptions; // Subscription management (time, timezone, wake-from-sleep)
 mod time; // Panel time formatting module (new)
 mod timer;

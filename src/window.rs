@@ -5,16 +5,13 @@ use cosmic::widget::segmented_button;
 use cosmic::widget::Id;
 use cosmic::{
     app,
-    applet::{cosmic_panel_config::PanelAnchor, menu_button, padded_control},
+    applet::cosmic_panel_config::PanelAnchor,
     cctk::sctk::reexports::calloop,
-    cosmic_theme::Spacing,
     iced::{
         platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup},
-        widget::column,
         window, Rectangle, Subscription,
     },
-    theme,
-    widget::{autosize, button, container, divider, icon, rectangle_tracker::*, text},
+    widget::{autosize, button, icon, rectangle_tracker::*},
     Element, Task,
 };
 use std::sync::LazyLock;
@@ -319,45 +316,15 @@ impl cosmic::Application for Window {
     }
 
     fn view_window(&self, _id: window::Id) -> Element<'_, Message> {
-        let Spacing {
-            space_xxs, space_s, ..
-        } = theme::active().cosmic().spacing;
-
-        // Tab navigation - matches system separator width with padding
-        let tabs = container(
-            segmented_button::horizontal(&self.tab_model)
-                .button_spacing(space_xxs) // Spacing between icon and text
-                .button_padding([space_xxs, space_s, space_xxs, space_s]) // Symmetric padding (top, right, bottom, left)
-                .on_activate(Message::TabActivated),
+        crate::popup::view(
+            &self.locale,
+            &self.calendar_state,
+            &self.now,
+            &self.config,
+            self.selected_tab,
+            &self.tab_model,
+            &self.core.applet,
         )
-        .padding([0, space_s]); // Horizontal padding to match separator
-
-        // Select view based on active tab
-        let tab_content = match self.selected_tab {
-            Tab::Calendar => crate::calendar::view_calendar(
-                &self.locale,
-                &self.calendar_state,
-                &self.now,
-                self.config.first_day_of_week,
-            )
-            .map(Message::Calendar),
-            Tab::Weather => crate::weather::view_weather(),
-            Tab::Timer => crate::timer::view_timer(),
-        };
-
-        // Footer with settings button
-        let footer = column![
-            padded_control(divider::horizontal::default()).padding([space_xxs, space_s]),
-            menu_button(text::body(fl!("datetime-settings")))
-                .on_press(Message::OpenDateTimeSettings),
-        ];
-
-        let content_list = column![tabs, tab_content, footer,].padding([8, 0]);
-
-        self.core
-            .applet
-            .popup_container(container(content_list))
-            .into()
     }
 
     fn on_close_requested(&self, id: window::Id) -> Option<Message> {
