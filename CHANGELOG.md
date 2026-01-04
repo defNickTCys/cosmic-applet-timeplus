@@ -13,6 +13,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date-based reminders system
 - Desktop notifications
 
+## [0.1.2] - 2026-01-04
+
+### Added - Phase 3.8: UI Architecture & Separation
+
+**🎨 Core UI Layer** - New architectural layer for UI rendering
+- `src/panel.rs` (195 lines) - Panel UI module
+  - `vertical_layout()` - Renders panel button for vertical panel orientation
+  - `horizontal_layout()` - Renders panel button for horizontal panel orientation
+  - `view()` - Main entry point that delegates to appropriate layout
+- `src/popup.rs` (83 lines) - Popup UI module
+  - `view()` - Renders complete popup structure (tabs, content, footer)
+  - Handles tab navigation with `segmented_button`
+  - Delegates tab content to feature modules
+
+### Changed - Architecture Refactoring
+
+**🧠 Pure Orchestrator Pattern** (`window.rs`)
+- Reduced from 369 to 334 lines (-9% further reduction)
+- `view()` method now delegates to `panel::view()` (removed inline UI construction)
+- `view_window()` method now delegates to `popup::view()` (removed inline UI construction)
+- Maintains only state management, message handling, and application lifecycle
+- Zero inline widget construction - pure orchestration
+
+**⚙️ Pure Utilities Pattern** (`time.rs`)
+- Reduced from 222 to 84 lines (-62% reduction)
+- Removed all UI dependencies (`cosmic::iced::widget`, `cosmic::widget`, `Element`)
+- Extracted `vertical_layout()` and `horizontal_layout()` to `panel.rs`
+- Now contains only data formatting logic
+- Added `locale()` getter for panel module access
+- Pure utility module with zero UI coupling
+
+**📋 Module Registration** (`lib.rs`)
+- Added `mod panel` - Panel UI module
+- Added `mod popup` - Popup UI module
+
+### Technical Improvements
+
+**Separation of Concerns**
+- ✅ **UI Layer** (`panel.rs`, `popup.rs`) - Widget construction and visual logic
+- ✅ **Orchestration** (`window.rs`) - State, messages, lifecycle
+- ✅ **Utilities** (`time.rs`) - Data formatting, no UI dependencies
+- ✅ **Features** (`calendar.rs`, `weather.rs`, `timer.rs`) - Domain-specific content
+
+**Code Quality**
+- All new modules include GPL-3.0 headers and System76 copyright
+- Comprehensive doc comments on all public functions and modules
+- Zero compilation warnings or clippy errors
+- Visual logic preserved exactly (no UI/UX changes)
+
+### Performance
+- Memory usage: Stable at 30-33MB (within baseline range)
+- Build time (release): ~1m 32s
+- All functional tests passing
+- Configuration updates work in real-time
+
 ## [0.1.1] - 2026-01-02
 
 ### Added
@@ -97,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/defNickTCys/cosmic-applet-timeplus/releases/tag/v0.1.0
 [0.0.1]: https://github.com/defNickTCys/cosmic-applet-timeplus/releases/tag/v0.0.1
