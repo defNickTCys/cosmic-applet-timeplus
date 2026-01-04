@@ -290,20 +290,22 @@ impl cosmic::Application for Window {
             PanelAnchor::Top | PanelAnchor::Bottom
         );
 
-        let button = button::custom(if horizontal {
-            self.panel_formatter
-                .horizontal_layout(&self.now, &self.config, &self.core.applet)
-        } else {
-            self.panel_formatter
-                .vertical_layout(&self.now, &self.config, &self.core.applet)
-        })
-        .padding(if horizontal {
-            [0, self.core.applet.suggested_padding(true).0]
-        } else {
-            [self.core.applet.suggested_padding(true).0, 0]
-        })
-        .on_press_down(Message::TogglePopup)
-        .class(cosmic::theme::Button::AppletIcon);
+        let panel_view = crate::panel::view(
+            &self.panel_formatter,
+            &self.now,
+            &self.config,
+            &self.core.applet,
+            horizontal,
+        );
+
+        let button = button::custom(panel_view)
+            .padding(if horizontal {
+                [0, self.core.applet.suggested_padding(true).0]
+            } else {
+                [self.core.applet.suggested_padding(true).0, 0]
+            })
+            .on_press_down(Message::TogglePopup)
+            .class(cosmic::theme::Button::AppletIcon);
 
         autosize::autosize(
             if let Some(tracker) = self.rectangle_tracker.as_ref() {
