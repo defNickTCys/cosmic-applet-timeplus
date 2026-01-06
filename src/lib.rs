@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 mod calendar; // Calendar module (renamed from time)
-mod config;
+pub mod config;
 mod localize;
 mod panel; // Panel UI module
 mod popup; // Popup UI module
@@ -58,11 +58,13 @@ pub enum Tab {
 }
 
 // ============================================================================
-// Application Entry Point
+// Application Entry Point (Neutral Messenger)
 // ============================================================================
+// lib.rs serves as the neutral messenger: receives config from main.rs
+// and passes it to the COSMIC runtime. This maintains architectural separation.
 
-pub fn run() -> cosmic::iced::Result {
+pub fn run(config: TimeAppletConfig) -> cosmic::iced::Result {
     localize::localize();
 
-    cosmic::applet::run::<Window>(())
+    cosmic::applet::run::<Window>(config)
 }

@@ -52,10 +52,10 @@ pub struct Window {
 impl cosmic::Application for Window {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = TimeAppletConfig;
     const APP_ID: &'static str = "com.system76.CosmicAppletTime";
 
-    fn init(core: app::Core, _flags: Self::Flags) -> (Self, app::Task<Self::Message>) {
+    fn init(core: app::Core, config: Self::Flags) -> (Self, app::Task<Self::Message>) {
         let locale = get_system_locale();
 
         // Chrono evaluates the local timezone once whereby it's stored in a thread local
@@ -100,7 +100,7 @@ impl cosmic::Application for Window {
                 rectangle_tracker: None,
                 rectangle: Rectangle::default(),
                 token_tx: None,
-                config: TimeAppletConfig::default(),
+                config,
                 show_seconds_tx,
                 locale,
                 selected_tab: Tab::Calendar,
