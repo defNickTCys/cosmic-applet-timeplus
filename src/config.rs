@@ -40,3 +40,34 @@ impl Default for TimeAppletConfig {
         }
     }
 }
+
+impl TimeAppletConfig {
+    /// Check if custom strftime format includes seconds (%S)
+    pub fn has_seconds_in_format(&self) -> bool {
+        self.format_strftime.contains("%S")
+    }
+
+    /// Check if seconds should be displayed (either via flag or custom format)
+    pub fn should_show_seconds(&self) -> bool {
+        self.show_seconds || self.has_seconds_in_format()
+    }
+
+    /// Validate strftime format string
+    pub fn validate_format(&self) -> bool {
+        // Empty format is valid (means use ICU defaults)
+        if self.format_strftime.is_empty() {
+            return true;
+        }
+
+        // Basic validation: check for common strftime patterns
+        // Allow alphanumeric, spaces, colons, slashes, and % prefixes
+        self.format_strftime
+            .chars()
+            .all(|c| c.is_alphanumeric() || " :/-%.".contains(c))
+    }
+
+    /// Get effective time format preference
+    pub fn is_24_hour(&self) -> bool {
+        self.military_time
+    }
+}
