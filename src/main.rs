@@ -22,11 +22,17 @@ struct CliArgs {
 fn main() -> cosmic::iced::Result {
     let args = CliArgs::parse();
 
-    // Configure logging level
+    // Configure logging level with noise filtering
     if args.debug {
-        tracing_subscriber::fmt()
-            .with_max_level(tracing::Level::DEBUG)
-            .init();
+        // Debug mode: show cosmic-applet-timeplus logs, suppress noisy dependencies
+        // User can override with RUST_LOG environment variable
+        if std::env::var("RUST_LOG").is_err() {
+            std::env::set_var(
+                "RUST_LOG",
+                "cosmic_applet_timeplus=debug,i18n_embed=warn,wgpu=warn",
+            );
+        }
+        tracing_subscriber::fmt::init();
     } else {
         tracing_subscriber::fmt::init();
         let _ = tracing_log::LogTracer::init();
