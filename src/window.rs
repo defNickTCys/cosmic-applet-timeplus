@@ -149,8 +149,10 @@ impl cosmic::Application for Window {
         match message {
             Message::TogglePopup => {
                 if let Some(p) = self.popup.take() {
+                    tracing::info!("[UI] Closing popup");
                     destroy_popup(p)
                 } else {
+                    tracing::info!("[UI] Opening popup");
                     self.calendar_state.reset_to_today(self.now);
 
                     let new_id = window::Id::unique();
@@ -206,18 +208,20 @@ impl cosmic::Application for Window {
                 Task::none()
             }
             Message::Calendar(msg) => {
+                tracing::debug!("[Calendar] Message: {:?}", msg);
                 self.calendar_state.update(msg);
                 Task::none()
             }
             Message::OpenDateTimeSettings => {
                 let exec = "cosmic-settings time".to_string();
                 if let Some(tx) = self.token_tx.as_ref() {
+                    tracing::info!("[System] Opening settings: {}", exec);
                     let _ = tx.send(TokenRequest {
                         app_id: Self::APP_ID.to_string(),
                         exec,
                     });
                 } else {
-                    tracing::error!("Wayland tx is None");
+                    tracing::warn!("[System] Settings requested but Wayland tx unavailable (not running in panel?)");
                 }
                 Task::none()
             }
@@ -279,6 +283,7 @@ impl cosmic::Application for Window {
             Message::TabActivated(entity) => {
                 self.tab_model.activate(entity);
                 if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    tracing::info!("[Navigation] Switched to tab: {:?}", tab);
                     self.selected_tab = *tab;
                 }
                 Task::none()
