@@ -1,6 +1,4 @@
 calendar = 日历
-weather = 天气
-timer = 计时器
 datetime-settings = 日期、时间和日历设置...
 
 # Weather placeholder
