@@ -250,11 +250,10 @@ impl cosmic::Application for Window {
                 Task::none()
             }
             Message::TimezoneUpdate(timezone) => {
-                if let Ok(timezone) = timezone.parse::<chrono_tz::Tz>() {
-                    self.now = chrono::Local::now().with_timezone(&timezone).fixed_offset();
-                    self.calendar_state.reset_to_today(self.now);
-                    self.timezone = Some(timezone);
-                }
+                let tz = crate::time::parse_timezone(&timezone);
+                self.now = chrono::Local::now().with_timezone(&tz).fixed_offset();
+                self.calendar_state.reset_to_today(self.now);
+                self.timezone = Some(tz);
 
                 self.update(Message::Tick)
             }

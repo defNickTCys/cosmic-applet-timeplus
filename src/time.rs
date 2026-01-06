@@ -19,7 +19,6 @@ use icu::locale::Locale;
 ///
 /// This centralizes all timezone parsing logic. If parsing fails,
 /// it falls back to the system's local timezone.
-#[allow(dead_code)]
 pub fn parse_timezone(tz_str: &str) -> Tz {
     tz_str.parse::<Tz>().unwrap_or_else(|err| {
         eprintln!("⚠️  Invalid timezone '{}': {}. Using local.", tz_str, err);
