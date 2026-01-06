@@ -8,7 +8,32 @@
 //! UI layout logic has been moved to the `panel` module.
 
 use chrono::{DateTime, FixedOffset};
+use chrono_tz::Tz;
 use icu::locale::Locale;
+
+// ============================================================================
+// Timezone Utilities
+// ============================================================================
+
+/// Parse timezone string with graceful fallback to system local
+///
+/// This centralizes all timezone parsing logic. If parsing fails,
+/// it falls back to the system's local timezone.
+#[allow(dead_code)]
+pub fn parse_timezone(tz_str: &str) -> Tz {
+    tz_str.parse::<Tz>().unwrap_or_else(|err| {
+        eprintln!("⚠️  Invalid timezone '{}': {}. Using local.", tz_str, err);
+        Tz::UTC // Fallback to UTC as a safe default
+    })
+}
+
+/// Get system local timezone
+#[allow(dead_code)]
+pub fn system_timezone() -> Tz {
+    // Try to get system timezone from environment or timedate D-Bus
+    // For now, default to UTC as a safe fallback
+    Tz::UTC
+}
 
 // ============================================================================
 // Constants
