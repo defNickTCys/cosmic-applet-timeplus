@@ -47,6 +47,8 @@ pub struct Window {
     // Tab system
     selected_tab: Tab,
     tab_model: segmented_button::SingleSelectModel,
+    /// Panel position captured at initialization (immutable during process lifecycle)
+    panel_anchor: PanelAnchor,
 }
 
 impl cosmic::Application for Window {
@@ -89,6 +91,9 @@ impl cosmic::Application for Window {
         // Activate first tab
         tab_model.activate_position(0);
 
+        // Capture panel position at initialization (immutable for process lifecycle)
+        let panel_anchor = core.applet.anchor;
+
         (
             Self {
                 core,
@@ -105,6 +110,7 @@ impl cosmic::Application for Window {
                 locale,
                 selected_tab: Tab::Calendar,
                 tab_model,
+                panel_anchor,
             },
             Task::none(),
         )
@@ -268,10 +274,8 @@ impl cosmic::Application for Window {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let horizontal = matches!(
-            self.core.applet.anchor,
-            PanelAnchor::Top | PanelAnchor::Bottom
-        );
+        // Use pre-captured panel position (immutable during process lifecycle)
+        let horizontal = matches!(self.panel_anchor, PanelAnchor::Top | PanelAnchor::Bottom);
 
         let panel_view = crate::panel::view(
             &self.panel_formatter,
