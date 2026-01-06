@@ -5,6 +5,7 @@ edition = "2021"
 license = "GPL-3.0-only"
 
 [dependencies]
+clap = { version = "4.4", features = ["derive"] }
 chrono = { version = "0.4.42", features = ["clock", "unstable-locales"] }
 chrono-tz = "0.10"
 i18n-embed-fl = "0.10"
