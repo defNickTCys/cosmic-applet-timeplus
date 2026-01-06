@@ -238,25 +238,12 @@ impl cosmic::Application for Window {
             Message::ConfigChanged(c) => {
                 // Don't interrupt the tick subscription unless necessary
                 self.show_seconds_tx.send_if_modified(|show_seconds| {
-                    if !c.format_strftime.is_empty() {
-                        if c.format_strftime.split('%').any(|s| {
-                            crate::time::STRFTIME_SECONDS
-                                .contains(&s.chars().next().unwrap_or_default())
-                        }) && !*show_seconds
-                        {
-                            // The strftime formatter contains a seconds specifier. Force enable
-                            // ticking per seconds internally regardless of the user setting.
-                            // This does not change the user's setting. It's invisible to the user.
-                            *show_seconds = true;
-                            true
-                        } else {
-                            false
-                        }
-                    } else if *show_seconds == c.show_seconds {
-                        false
-                    } else {
-                        *show_seconds = c.show_seconds;
+                    let new_value = c.should_show_seconds();
+                    if *show_seconds != new_value {
+                        *show_seconds = new_value;
                         true
+                    } else {
+                        false
                     }
                 });
                 self.config = c;
