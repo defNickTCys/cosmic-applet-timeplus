@@ -263,6 +263,19 @@ impl cosmic::Application for Window {
 
                 self.update(Message::Tick)
             }
+            // Notification placeholders (Phase 3.7 - not yet implemented)
+            Message::TriggerNotification { .. } => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
+            }
+            Message::NotificationDismissed => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
+            }
+            Message::NotificationAction(_) => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
+            }
             Message::TabActivated(entity) => {
                 self.tab_model.activate(entity);
                 if let Some(tab) = self.tab_model.data::<Tab>(entity) {

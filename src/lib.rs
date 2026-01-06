@@ -37,6 +37,17 @@ pub enum Message {
     // Module envelopes
     Calendar(calendar::CalendarMessage),
 
+    // Notifications (Placeholders for Phase 3.7)
+    /// Trigger a notification alert with sound
+    TriggerNotification {
+        message: String,
+        duration_secs: u64,
+    },
+    /// Notification was dismissed (body click or X button)
+    NotificationDismissed,
+    /// User clicked notification action button
+    NotificationAction(String),
+
     // System
     OpenDateTimeSettings,
     Token(TokenUpdate),
