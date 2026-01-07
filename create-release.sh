@@ -1,10 +1,18 @@
 #!/bin/bash
 # Manual release tarball creator for cosmic-applet-timeplus
-# Usage: ./create-release.sh
+# Usage: ./create-release.sh v0.1.3
 
 set -e
 
-VERSION="v0.1.0"
+VERSION="$1"
+
+if [ -z "$VERSION" ]; then
+    echo "❌ Error: Version argument required"
+    echo "Usage: ./create-release.sh <version>"
+    echo "Example: ./create-release.sh v0.1.3"
+    exit 1
+fi
+
 RELEASE_DIR="cosmic-applet-timeplus-${VERSION}"
 TARBALL="${RELEASE_DIR}-x86_64.tar.gz"
 
@@ -27,8 +35,8 @@ cp data/com.system76.CosmicAppletTimePlus.svg "${RELEASE_DIR}/"
 cp install.sh "${RELEASE_DIR}/"
 
 # Create README for release
-cat > "${RELEASE_DIR}/README.txt" << 'EOF'
-cosmic-applet-timeplus v0.1.0
+cat > "${RELEASE_DIR}/README.txt" << EOF
+cosmic-applet-timeplus ${VERSION}
 ==============================
 
 Installation:
