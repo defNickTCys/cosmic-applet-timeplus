@@ -203,6 +203,7 @@ impl cosmic::Application for Window {
             }
             Message::CloseRequested(id) => {
                 if Some(id) == self.popup {
+                    tracing::info!("[UI] Closing popup (close requested)");
                     self.popup = None;
                 }
                 Task::none()
