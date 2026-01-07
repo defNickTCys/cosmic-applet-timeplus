@@ -1,6 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
+use chrono::Datelike;
 use cosmic::widget::segmented_button;
 use cosmic::widget::Id;
 use cosmic::{
@@ -93,6 +94,16 @@ impl cosmic::Application for Window {
 
         // Capture panel position at initialization (immutable for process lifecycle)
         let panel_anchor = core.applet.anchor;
+
+        tracing::info!("[Init] Initializing applet");
+        tracing::info!("[Init] Panel position: {:?}", panel_anchor);
+        tracing::info!("[Init] Locale: {}", locale);
+        tracing::info!("[Init] Timezone: {}", now.timezone());
+        tracing::debug!(
+            "[Init] Config: show_seconds={}, format={}",
+            config.show_seconds,
+            config.format_strftime
+        );
 
         (
             Self {
@@ -209,7 +220,25 @@ impl cosmic::Application for Window {
                 Task::none()
             }
             Message::Calendar(msg) => {
-                tracing::debug!("[Calendar] Message: {:?}", msg);
+                // Log with full date context
+                match &msg {
+                    crate::calendar::CalendarMessage::SelectDay(day) => {
+                        let selected = self.calendar_state.date_selected;
+                        tracing::debug!(
+                            "[Calendar] SelectDay({}) -> {}-{:02}-{:02}",
+                            day,
+                            selected.year(),
+                            selected.month(),
+                            day
+                        );
+                    }
+                    crate::calendar::CalendarMessage::PreviousMonth => {
+                        tracing::debug!("[Calendar] PreviousMonth");
+                    }
+                    crate::calendar::CalendarMessage::NextMonth => {
+                        tracing::debug!("[Calendar] NextMonth");
+                    }
+                }
                 self.calendar_state.update(msg);
                 Task::none()
             }
