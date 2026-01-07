@@ -1,6 +1,4 @@
 calendar = Календарь
-weather = Погода
-timer = Таймер
 datetime-settings = Настройки даты, времени и календаря...
 
 # Weather placeholder

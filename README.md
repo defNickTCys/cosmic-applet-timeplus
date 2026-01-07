@@ -23,7 +23,7 @@
 
 ## 📸 Screenshots
 
-*All screenshots captured from **v0.1.2** running on COSMIC Desktop (Fedora Linux 43)*
+*All screenshots captured from **v0.1.3** running on COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Tab Navigation System</summary>
@@ -135,6 +135,33 @@ Located at the absolute top of the container.
 - Standard COSMIC patterns
 - Ready for countdown logic
 - *Coming Soon:* Pomodoro presets, notifications, persistence
+
+---
+
+## 🆕 What's New in v0.1.3
+
+### 🔧 Command-Line Interface
+- **Debug mode**: `cosmic-applet-timeplus --debug` with structured logging
+- **Custom config**: `--config <path>` for testing configurations
+- Smart log filtering (`RUST_LOG`) - eliminates dependency noise
+
+### 📊 Production-Grade Observability
+- **Initialization tracing**: Panel position, locale, timezone, config snapshot
+- **User interaction logs**: Categorized by `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`
+- **Enriched context**: Calendar operations show full dates (2026-01-21)
+- **Proper log levels**: INFO for UI events, DEBUG for details, WARN for recoverable errors
+
+### 🏗️ Architectural Improvements
+- **Dependency Injection**: Configuration passed via `Flags` pattern
+- **Immutable positioning**: Panel anchor captured once at init (performance)
+- **Centralized validation**: Logic moved from `window.rs` to `config.rs` and `time.rs`
+- **Graceful degradation**: Wayland connection errors handled without crashes
+
+### 🐛 Fixes
+- **i18n cleanup**: Removed duplicate keys from 61 language files (122 lines)
+- **Error handling**: Changed Wayland errors from ERROR to WARN with context
+
+**15 atomic commits** | See [CHANGELOG.md](CHANGELOG.md#0.1.3) for full details
 
 ---
 
@@ -517,6 +544,16 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Achieve** 100% separation of concerns (UI, Orchestration, Utilities, Features)
 - [x] **Preserve** all visual logic (zero UI/UX changes)
 - [x] **Maintain** zero compilation warnings and clippy errors
+
+### Phase 3.6: Infrastructure Refactoring & Observability ✅ *v0.1.3*
+- [x] **CLI Foundation** - `clap` with `--debug` and `--config` arguments
+- [x] **Observability** - Comprehensive tracing (`[Init]`, `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`)
+- [x] **Dependency Injection** - Config passed via `Flags` pattern
+- [x] **Centralized Logic** - Validation in `config.rs`, parsing in `time.rs`
+- [x] **Immutable Positioning** - Panel anchor captured once at init
+- [x] **i18n Cleanup** - Removed duplicates from 61 files
+- [x] **Graceful Errors** - Wayland failures handled without crashes
+- [x] **15 atomic commits** with 100% test validation
 
 ### Phase 4: Weather Module 🌤️ *NEXT*
 - [ ] OpenWeatherMap API integration

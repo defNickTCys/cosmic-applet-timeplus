@@ -1,6 +1,4 @@
 calendar = カレンダー
-weather = 天気
-timer = タイマー
 datetime-settings = 日付、時刻、カレンダーの設定...
 
 # Weather placeholder

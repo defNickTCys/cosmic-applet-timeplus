@@ -1,6 +1,7 @@
 // Copyright 2023 System76 <info@system76.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
+use chrono::Datelike;
 use cosmic::widget::segmented_button;
 use cosmic::widget::Id;
 use cosmic::{
@@ -47,15 +48,17 @@ pub struct Window {
     // Tab system
     selected_tab: Tab,
     tab_model: segmented_button::SingleSelectModel,
+    /// Panel position captured at initialization (immutable during process lifecycle)
+    panel_anchor: PanelAnchor,
 }
 
 impl cosmic::Application for Window {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = TimeAppletConfig;
     const APP_ID: &'static str = "com.system76.CosmicAppletTime";
 
-    fn init(core: app::Core, _flags: Self::Flags) -> (Self, app::Task<Self::Message>) {
+    fn init(core: app::Core, config: Self::Flags) -> (Self, app::Task<Self::Message>) {
         let locale = get_system_locale();
 
         // Chrono evaluates the local timezone once whereby it's stored in a thread local
@@ -89,6 +92,19 @@ impl cosmic::Application for Window {
         // Activate first tab
         tab_model.activate_position(0);
 
+        // Capture panel position at initialization (immutable for process lifecycle)
+        let panel_anchor = core.applet.anchor;
+
+        tracing::info!("[Init] Initializing applet");
+        tracing::info!("[Init] Panel position: {:?}", panel_anchor);
+        tracing::info!("[Init] Locale: {}", locale);
+        tracing::info!("[Init] Timezone: {}", now.timezone());
+        tracing::debug!(
+            "[Init] Config: show_seconds={}, format={}",
+            config.show_seconds,
+            config.format_strftime
+        );
+
         (
             Self {
                 core,
@@ -100,11 +116,12 @@ impl cosmic::Application for Window {
                 rectangle_tracker: None,
                 rectangle: Rectangle::default(),
                 token_tx: None,
-                config: TimeAppletConfig::default(),
+                config,
                 show_seconds_tx,
                 locale,
                 selected_tab: Tab::Calendar,
                 tab_model,
+                panel_anchor,
             },
             Task::none(),
         )
@@ -143,8 +160,10 @@ impl cosmic::Application for Window {
         match message {
             Message::TogglePopup => {
                 if let Some(p) = self.popup.take() {
+                    tracing::info!("[UI] Closing popup");
                     destroy_popup(p)
                 } else {
+                    tracing::info!("[UI] Opening popup");
                     self.calendar_state.reset_to_today(self.now);
 
                     let new_id = window::Id::unique();
@@ -195,23 +214,44 @@ impl cosmic::Application for Window {
             }
             Message::CloseRequested(id) => {
                 if Some(id) == self.popup {
+                    tracing::info!("[UI] Closing popup (close requested)");
                     self.popup = None;
                 }
                 Task::none()
             }
             Message::Calendar(msg) => {
+                // Log with full date context
+                match &msg {
+                    crate::calendar::CalendarMessage::SelectDay(day) => {
+                        let selected = self.calendar_state.date_selected;
+                        tracing::debug!(
+                            "[Calendar] SelectDay({}) -> {}-{:02}-{:02}",
+                            day,
+                            selected.year(),
+                            selected.month(),
+                            day
+                        );
+                    }
+                    crate::calendar::CalendarMessage::PreviousMonth => {
+                        tracing::debug!("[Calendar] PreviousMonth");
+                    }
+                    crate::calendar::CalendarMessage::NextMonth => {
+                        tracing::debug!("[Calendar] NextMonth");
+                    }
+                }
                 self.calendar_state.update(msg);
                 Task::none()
             }
             Message::OpenDateTimeSettings => {
                 let exec = "cosmic-settings time".to_string();
                 if let Some(tx) = self.token_tx.as_ref() {
+                    tracing::info!("[System] Opening settings: {}", exec);
                     let _ = tx.send(TokenRequest {
                         app_id: Self::APP_ID.to_string(),
                         exec,
                     });
                 } else {
-                    tracing::error!("Wayland tx is None");
+                    tracing::warn!("[System] Settings requested but Wayland tx unavailable (not running in panel?)");
                 }
                 Task::none()
             }
@@ -238,42 +278,42 @@ impl cosmic::Application for Window {
             Message::ConfigChanged(c) => {
                 // Don't interrupt the tick subscription unless necessary
                 self.show_seconds_tx.send_if_modified(|show_seconds| {
-                    if !c.format_strftime.is_empty() {
-                        if c.format_strftime.split('%').any(|s| {
-                            crate::time::STRFTIME_SECONDS
-                                .contains(&s.chars().next().unwrap_or_default())
-                        }) && !*show_seconds
-                        {
-                            // The strftime formatter contains a seconds specifier. Force enable
-                            // ticking per seconds internally regardless of the user setting.
-                            // This does not change the user's setting. It's invisible to the user.
-                            *show_seconds = true;
-                            true
-                        } else {
-                            false
-                        }
-                    } else if *show_seconds == c.show_seconds {
-                        false
-                    } else {
-                        *show_seconds = c.show_seconds;
+                    let new_value = c.should_show_seconds();
+                    if *show_seconds != new_value {
+                        *show_seconds = new_value;
                         true
+                    } else {
+                        false
                     }
                 });
                 self.config = c;
                 Task::none()
             }
             Message::TimezoneUpdate(timezone) => {
-                if let Ok(timezone) = timezone.parse::<chrono_tz::Tz>() {
-                    self.now = chrono::Local::now().with_timezone(&timezone).fixed_offset();
-                    self.calendar_state.reset_to_today(self.now);
-                    self.timezone = Some(timezone);
-                }
+                let tz = crate::time::parse_timezone(&timezone);
+                self.now = chrono::Local::now().with_timezone(&tz).fixed_offset();
+                self.calendar_state.reset_to_today(self.now);
+                self.timezone = Some(tz);
 
                 self.update(Message::Tick)
+            }
+            // Notification placeholders (Phase 3.7 - not yet implemented)
+            Message::TriggerNotification { .. } => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
+            }
+            Message::NotificationDismissed => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
+            }
+            Message::NotificationAction(_) => {
+                // TODO: Implement in Phase 3.7
+                Task::none()
             }
             Message::TabActivated(entity) => {
                 self.tab_model.activate(entity);
                 if let Some(tab) = self.tab_model.data::<Tab>(entity) {
+                    tracing::info!("[Navigation] Switched to tab: {:?}", tab);
                     self.selected_tab = *tab;
                 }
                 Task::none()
@@ -282,10 +322,8 @@ impl cosmic::Application for Window {
     }
 
     fn view(&self) -> Element<'_, Message> {
-        let horizontal = matches!(
-            self.core.applet.anchor,
-            PanelAnchor::Top | PanelAnchor::Bottom
-        );
+        // Use pre-captured panel position (immutable during process lifecycle)
+        let horizontal = matches!(self.panel_anchor, PanelAnchor::Top | PanelAnchor::Bottom);
 
         let panel_view = crate::panel::view(
             &self.panel_formatter,

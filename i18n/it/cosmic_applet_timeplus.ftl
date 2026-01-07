@@ -1,6 +1,4 @@
 calendar = Calendario
-weather = Meteo
-timer = Timer
 datetime-settings = Impostazioni di data, ora e calendario...
 
 # Weather placeholder
