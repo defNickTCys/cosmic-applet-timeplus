@@ -13,6 +13,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date-based reminders system
 - Desktop notifications
 
+## [0.1.3] - 2026-01-07
+
+### Added - Phase 3.6: Infrastructure Refactoring & Observability
+
+**🔧 CLI Foundation**
+- Command-line interface with `clap` derive
+  - `--config <path>` - Custom configuration file (placeholder)
+  - `--debug` - Enable verbose logging with filtered output
+  - `--help` / `--version` - Standard help and version info
+- Smart logging configuration with `RUST_LOG` environment variable
+  - Debug mode: `cosmic_applet_timeplus=debug,i18n_embed=warn,wgpu=warn`
+  - Reduces noise from dependencies (~60 lines of i18n errors eliminated)
+
+**📊 Comprehensive Observability**
+- Initialization logging with full context (panel position, locale, timezone, config)
+- User interaction tracing categories: `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`
+- Calendar logs with full YYYY-MM-DD context
+- Proper log levels (INFO/DEBUG/WARN)
+
+**🏗️ Architecture Improvements**
+- Neutral Messenger pattern fully implemented
+- Dependency injection via `Flags` parameter  
+- Immutable panel position captured at initialization
+- Centralized validation (`config.rs`) and parsing logic (`time.rs`)
+
+### Changed - Code Organization
+
+**Module Updates**
+- `src/config.rs`: Added `should_show_seconds()`, `validate_format()`, `is_24_hour()`
+- `src/time.rs`: Added `parse_timezone()`, `system_timezone()`
+- `src/lib.rs`: Public `config` module, notification message placeholders
+- `src/main.rs`: CLI parsing, conditional logging
+- `src/window.rs`: Dependency injection, comprehensive tracing, enriched calendar logs
+
+### Fixed
+
+**i18n Cleanup** - Removed duplicate keys from 61 locale files (122 lines)
+**Error Handling** - Wayland errors now WARN instead of ERROR
+
+**Commits**: 14 atomic commits with semantic versioning
+
 ## [0.1.2] - 2026-01-04
 
 ### Added - Phase 3.8: UI Architecture & Separation
@@ -152,7 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/defNickTCys/cosmic-applet-timeplus/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/defNickTCys/cosmic-applet-timeplus/releases/tag/v0.1.0
