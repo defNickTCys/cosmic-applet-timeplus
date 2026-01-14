@@ -161,30 +161,41 @@ Located at the absolute top of the container.
 - **i18n cleanup**: Removed duplicate keys from 61 language files (122 lines)
 - **Error handling**: Changed Wayland errors from ERROR to WARN with context
 
-**15 atomic commits** | See [CHANGELOG.md](CHANGELOG.md#0.1.3) for full details
+**16 atomic commits** | See [CHANGELOG.md](CHANGELOG.md#013---2026-01-07) for full details
 
 ---
 
 ## 🏗️ Software Architecture
 
-### Layered Architecture (v0.1.2)
+### Layered Architecture (v0.1.3)
 
-Time Plus follows a clean **Layered Architecture** with clear separation of concerns introduced across v0.1.1 and v0.1.2:
+Time Plus follows a clean **Layered Architecture** with clear separation of concerns introduced across v0.1.1, v0.1.2, and refined in v0.1.3:
 
 ```
+┌─────────────────────────────────────────────┐
+│          main.rs (Entry Point)              │
+│  • CLI argument parsing (clap)              │
+│  • Graceful config loading                  │
+│  • Logging configuration (RUST_LOG)         │
+└─────────────────────────────────────────────┘
+                     │ 
+                     ▼ (passes TimeAppletConfig)
 ┌─────────────────────────────────────────────┐
 │         lib.rs (Neutral Messenger)          │
 │  • Global Message enum (no dependencies)    │
 │  • Tab enum shared across modules           │
 │  • Prevents circular dependencies           │
+│  • run(config) → cosmic::applet::run        │
 └─────────────────────────────────────────────┘
                      │
-                     ▼
+                     ▼ (Flags = TimeAppletConfig)
 ┌─────────────────────────────────────────────┐
 │         window.rs (Orchestrator)            │
+│  • Dependency Injection via Flags           │
 │  • Manages application lifecycle            │
 │  • Handles state and messages               │
 │  • Delegates ALL UI to UI Layer             │
+│  • Comprehensive tracing instrumentation    │
 │  • ZERO inline widgets (334 lines)          │
 └─────────────────────────────────────────────┘
           │                        │
@@ -207,10 +218,16 @@ Time Plus follows a clean **Layered Architecture** with clear separation of conc
   ┌──────────────────┐           │
   │    time.rs       │           ▼
   │  Pure formatter  │    ┌──────────────┐
-  │  (84 lines)      │    │subscriptions │
-  │  NO UI deps      │    │   .rs        │
+  │  Timezone parse  │    │subscriptions │
+  │  (84 lines)      │    │   .rs        │
+  │  NO UI deps      │    └──────────────┘
+  └──────────────────┘    ┌──────────────┐
+  ┌──────────────────┐    │  config.rs   │
+  │  localize.rs     │    │  Validation  │
+  │  i18n system     │    │  methods     │
   └──────────────────┘    └──────────────┘
 ```
+
 
 ### Message Envelope Pattern
 
@@ -268,11 +285,14 @@ let tabs = segmented_button::horizontal(&self.tab_model)
 let tabs = custom_tab_widget();
 ```
 
-#### 🧩 Separation of Concerns (v0.1.2)
+#### 🧩 Separation of Concerns (v0.1.3)
+
+**Entry Point Layer:** *(New in v0.1.3)*
+- **main.rs**: CLI parsing, graceful config loading, logging setup
 
 **Orchestration Layer:**
 - **lib.rs**: Neutral message envelope (no dependencies)
-- **window.rs**: Pure orchestrator (state, messages, lifecycle ONLY)
+- **window.rs**: Pure orchestrator (state, messages, lifecycle ONLY) + DI via Flags
 
 **Core UI Layer:** *(New in v0.1.2)*
 - **panel.rs**: Panel button rendering (vertical/horizontal layouts)
@@ -283,23 +303,25 @@ let tabs = custom_tab_widget();
 - Complete ownership of their domain (state + logic + view)
 
 **Utilities Layer:**
-- **time.rs**: Pure data formatting (NO UI dependencies)
+- **time.rs**: Pure data formatting + timezone parsing (NO UI dependencies)
+- **config.rs**: Configuration + centralized validation methods *(v0.1.3)*
 - **subscriptions.rs**: Async subscriptions (time, timezone, wake)
 - **localize.rs**: Internationalization
 
 **No cross-module dependencies**: Modules never import each other
 
-#### 📦 Single Responsibility (v0.1.2)
+#### 📦 Single Responsibility (v0.1.3)
 
 Each file has ONE clear purpose:
+- `main.rs` → Entry point (CLI, config, logging) *New in v0.1.3*
 - `lib.rs` → Neutral Messenger (Message + Tab enums)
-- `window.rs` → Pure orchestrator (334 lines, -9% from v0.1.1)
+- `window.rs` → Pure orchestrator (334 lines, -9% from v0.1.1) + DI *v0.1.3*
 - **`panel.rs`** → Panel UI rendering (195 lines) *New in v0.1.2*
 - **`popup.rs`** → Popup UI structure (83 lines) *New in v0.1.2*
 - `calendar.rs` → Calendar functionality (state + view + logic)
-- `time.rs` → Pure data formatting (84 lines, -62% from v0.1.1)
+- `time.rs` → Pure data formatting + timezone parsing (84 lines, -62% from v0.1.1)
+- `config.rs` → Configuration + centralized validation *Enhanced in v0.1.3*
 - `subscriptions.rs` → Subscription management (time, timezone, wake)
-- `config.rs` → Configuration management
 - `localize.rs` → Internationalization + system locale detection
 
 ---
@@ -447,7 +469,7 @@ cosmic-applet-timeplus/
 └── TRANSLATIONS.md      # Translation status
 ```
 
-**Key Architectural Decisions (v0.1.2):**
+**Key Architectural Decisions (v0.1.3):**
 - **Layered Architecture**: Clear separation between Orchestration, UI, Features, and Utilities
 - **Core UI Layer**: Dedicated `panel.rs` and `popup.rs` for all UI construction (v0.1.2)
 - **Pure Orchestrator**: `window.rs` has ZERO inline widgets (334 lines)
@@ -555,7 +577,14 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Graceful Errors** - Wayland failures handled without crashes
 - [x] **15 atomic commits** with 100% test validation
 
-### Phase 4: Weather Module 🌤️ *NEXT*
+### Phase 3.7: System Wiring & Notifications 🔔 *NEXT*
+- [ ] Basic notification system via `notify-rust`
+- [ ] Timer countdown completion notifications
+- [ ] Calendar date reminder notifications
+- [ ] Notification action handlers
+- [ ] Audio alerts (optional)
+
+### Phase 4: Weather Module 🌤️
 - [ ] OpenWeatherMap API integration
 - [ ] Location configuration
 - [ ] Weather display in popup
@@ -564,14 +593,14 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 ### Phase 5: Timer Module ⏱️
 - [ ] Countdown timer logic
 - [ ] Preset management
-- [ ] Desktop notifications
+- [ ] Persistent state
 - [ ] Mini timer widget on panel
 
 ### Phase 6: Quick Reminders 📝
 - [ ] Date-based reminder storage
 - [ ] Visual indicators on calendar
 - [ ] Add/edit/delete UI
-- [ ] Desktop notifications when due
+- [ ] Integration with notifications
 
 ### Phase 7: Polish 💎
 - [ ] Settings UI
@@ -616,6 +645,13 @@ Based on [cosmic-applet-time](https://github.com/pop-os/cosmic-applets) by Syste
 
 ---
 
+## 📚 Developer Documentation
+
+- [DEVELOPMENT_STATE.md](DEVELOPMENT_STATE.md) - Current development status, learnings, and next steps
+
+---
+
 <p align="center">
 Made with ❤️ and 🤖 for the COSMIC Desktop community
 </p>
+

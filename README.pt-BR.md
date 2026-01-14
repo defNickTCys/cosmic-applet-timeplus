@@ -161,30 +161,41 @@ Localizada no topo absoluto do container.
 - **Limpeza i18n**: Removidas chaves duplicadas de 61 arquivos de idioma (122 linhas)
 - **Tratamento de erros**: Erros Wayland mudados de ERROR para WARN com contexto
 
-**15 commits atômicos** | Veja [CHANGELOG.md](CHANGELOG.md#0.1.3) para detalhes completos
+**16 commits atômicos** | Veja [CHANGELOG.md](CHANGELOG.md#013---2026-01-07) para detalhes completos
 
 ---
 
 ## 🏗️ Arquitetura de Software
 
-### Arquitetura em Camadas (v0.1.2)
+### Arquitetura em Camadas (v0.1.3)
 
-O Time Plus segue uma **Arquitetura em Camadas** limpa com clara separação de responsabilidades introduzida ao longo das v0.1.1 e v0.1.2:
+O Time Plus segue uma **Arquitetura em Camadas** limpa com clara separação de responsabilidades introduzida ao longo das v0.1.1, v0.1.2 e refinada na v0.1.3:
 
 ```
+┌─────────────────────────────────────────────┐
+│          main.rs (Ponto de Entrada)         │
+│  • Parsing de argumentos CLI (clap)         │
+│  • Carregamento gracioso de config          │
+│  • Configuração de logging (RUST_LOG)       │
+└─────────────────────────────────────────────┘
+                     │ 
+                     ▼ (passa TimeAppletConfig)
 ┌─────────────────────────────────────────────┐
 │         lib.rs (Mensageiro Neutro)          │
 │  • Enum Message global (sem dependências)   │
 │  • Enum Tab compartilhado entre módulos     │
 │  • Previne dependências circulares          │
+│  • run(config) → cosmic::applet::run        │
 └─────────────────────────────────────────────┘
                      │
-                     ▼
+                     ▼ (Flags = TimeAppletConfig)
 ┌─────────────────────────────────────────────┐
 │         window.rs (Orquestrador)            │
+│  • Injeção de Dependências via Flags        │
 │  • Gerencia ciclo de vida da aplicação      │
 │  • Controla estado e mensagens              │
 │  • Delega TODA UI para Camada UI            │
+│  • Instrumentação abrangente de tracing     │
 │  • ZERO widgets inline (334 linhas)         │
 └─────────────────────────────────────────────┘
           │                        │
@@ -207,8 +218,13 @@ O Time Plus segue uma **Arquitetura em Camadas** limpa com clara separação de 
   ┌──────────────────┐           │
   │    time.rs       │           ▼
   │  Formatador puro │    ┌──────────────┐
-  │  (84 linhas)     │    │subscriptions │
-  │  SEM deps UI     │    │   .rs        │
+  │  Parsing TZ      │    │subscriptions │
+  │  (84 linhas)     │    │   .rs        │
+  │  SEM deps UI     │    └──────────────┘
+  └──────────────────┘    ┌──────────────┐
+  ┌──────────────────┐    │  config.rs   │
+  │  localize.rs     │    │  Validação   │
+  │  Sistema i18n    │    │  métodos     │
   └──────────────────┘    └──────────────┘
 ```
 
@@ -268,11 +284,14 @@ let tabs = segmented_button::horizontal(&self.tab_model)
 let tabs = custom_tab_widget();
 ```
 
-#### 🧩 Separação de Responsabilidades (v0.1.2)
+#### 🧩 Separação de Responsabilidades (v0.1.3)
+
+**Camada de Ponto de Entrada:** *(Nova na v0.1.3)*
+- **main.rs**: Parsing CLI, carregamento gracioso de config, setup de logging
 
 **Camada de Orquestração:**
 - **lib.rs**: Envelope de mensagens neutro (sem dependências)
-- **window.rs**: Orquestrador puro (estado, mensagens, ciclo de vida APENAS)
+- **window.rs**: Orquestrador puro (estado, mensagens, ciclo de vida APENAS) + DI via Flags
 
 **Camada Core UI:** *(Nova na v0.1.2)*
 - **panel.rs**: Renderização do botão do painel (layouts vertical/horizontal)
@@ -283,23 +302,25 @@ let tabs = custom_tab_widget();
 - Propriedade completa de seu domínio (estado + lógica + view)
 
 **Camada de Utilitários:**
-- **time.rs**: Formatação pura de dados (SEM dependências de UI)
+- **time.rs**: Formatação pura de dados + parsing de timezone (SEM dependências de UI)
+- **config.rs**: Configuração + métodos de validação centralizados *(v0.1.3)*
 - **subscriptions.rs**: Subscriptions assíncronas (tempo, timezone, wake)
 - **localize.rs**: Internacionalização
 
 **Sem dependências entre módulos**: Módulos nunca importam uns aos outros
 
-#### 📦 Responsabilidade Única (v0.1.2)
+#### 📦 Responsabilidade Única (v0.1.3)
 
 Cada arquivo tem UM propósito claro:
+- `main.rs` → Ponto de entrada (CLI, config, logging) *Nova na v0.1.3*
 - `lib.rs` → Mensageiro Neutro (enums Message + Tab)
-- `window.rs` → Orquestrador puro (334 linhas, -9% da v0.1.1)
+- `window.rs` → Orquestrador puro (334 linhas, -9% da v0.1.1) + DI *v0.1.3*
 - **`panel.rs`** → Renderização UI do painel (195 linhas) *Nova na v0.1.2*
 - **`popup.rs`** → Estrutura UI do popup (83 linhas) *Nova na v0.1.2*
 - `calendar.rs` → Funcionalidade do calendário (estado + view + lógica)
-- `time.rs` → Formatação pura de dados (84 linhas, -62% da v0.1.1)
+- `time.rs` → Formatação pura de dados + parsing de timezone (84 linhas, -62% da v0.1.1)
+- `config.rs` → Configuração + validação centralizada *Aprimorado na v0.1.3*
 - `subscriptions.rs` → Gerenciamento de subscriptions (tempo, timezone, wake)
-- `config.rs` → Gerenciamento de configuração
 - `localize.rs` → Internacionalização + detecção de locale do sistema
 
 ---
@@ -447,7 +468,7 @@ cosmic-applet-timeplus/
 └── TRANSLATIONS.md      # Status de traduções
 ```
 
-**Decisões Arquiteturais Chave (v0.1.2):**
+**Decisões Arquiteturais Chave (v0.1.3):**
 - **Arquitetura em Camadas**: Clara separação entre Orquestração, UI, Features e Utilitários
 - **Camada Core UI**: `panel.rs` e `popup.rs` dedicados para toda construção de UI (v0.1.2)
 - **Orquestrador Puro**: `window.rs` tem ZERO widgets inline (334 linhas)
@@ -552,9 +573,16 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] **Posicionamento Imutável** - Âncora do painel capturada uma vez na init
 - [x] **Limpeza i18n** - Duplicatas removidas de 61 arquivos
 - [x] **Erros Graciosos** - Falhas Wayland tratadas sem crashes
-- [x] **15 commits atômicos** com 100% validação de testes
+- [x] **16 commits atômicos** com 100% validação de testes
 
-### Fase 4: Módulo de Clima 🌤️ *PRÓXIMA*
+### Fase 3.7: Integração de Sistema & Notificações 🔔 *PRÓXIMA*
+- [ ] Sistema básico de notificações via `notify-rust`
+- [ ] Notificações de conclusão de contagem do timer
+- [ ] Notificações de lembretes de datas do calendário
+- [ ] Handlers de ação de notificação
+- [ ] Alertas de áudio (opcional)
+
+### Fase 4: Módulo de Clima 🌤️
 - [ ] Integração com API OpenWeatherMap
 - [ ] Configuração de localização
 - [ ] Exibição de clima no popup
@@ -563,7 +591,7 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 ### Fase 5: Módulo de Timer ⏱️
 - [ ] Lógica de timer de contagem regressiva
 - [ ] Gerenciamento de presets
-- [ ] Notificações no desktop
+- [ ] Estado persistente
 - [ ] Mini widget de timer no painel
 
 ### Fase 6: Lembretes Rápidos 📝
