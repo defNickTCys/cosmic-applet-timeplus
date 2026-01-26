@@ -105,15 +105,38 @@ case "$1" in
         mark_git_updated
         echo "✅ Dependencies updated!"
         ;;
+    debug)
+        echo "⚡ Fast Debug Build (mold enabled via config)..."
+        cargo build && \
+        cargo install --path . --debug --locked && \
+        killall cosmic-panel
+        echo "✅ Debug build reloaded!"
+        ;;
+    debug-panel)
+        echo "⚡ Compilando DEBUG e injetando no Painel..."
+        # Instala a versão de debug na pasta global (~/.cargo/bin)
+        # O --debug diz para não otimizar (compilação rápida)
+        cargo install --path . --debug --locked
+        
+        echo "🔄 Reiniciando painel..."
+        killall cosmic-panel
+        
+        # Opcional: Já deixa o comando de log pronto para você copiar/rodar
+        echo "✅ Painel reiniciado com Applet (Debug Mode)!"
+        echo "📝 Para ver os logs em tempo real, rode em outra aba:"
+        echo "   journalctl -f -b --user | grep cosmic-applet-timeplus"
+        ;;
     
-    *)
-        echo "Usage: $0 {check|test|clippy|dev|build|install|run|reload|clean|force-update}"
+*)
+        echo "Usage: $0 {check|test|clippy|dev|debug|debug-panel|build|install|run|reload|clean|force-update}"
         echo ""
         echo "🚀 Development commands:"
         echo "  check        - Quick code verification (no compilation)"
         echo "  test         - Run unit tests"
         echo "  clippy       - Run Rust linter"
-        echo "  dev          - Fast iteration: build + install (--locked, no Git updates)"
+        echo "  debug        - Fast compile & install (Debug Mode + mold)"
+        echo "  debug-panel  - Debug + Restart Panel (View logs with journalctl)"
+        echo "  dev          - Release Mode iteration (Optimized binary)"
         echo ""
         echo "📦 Release commands:"
         echo "  build        - Build optimized release binary"
@@ -125,11 +148,6 @@ case "$1" in
         echo "  clean        - Remove build artifacts and update cache"
         echo "  force-update - Force Git dependency update"
         echo ""
-        echo "💡 Smart Git Updates:"
-        echo "   First 'run' or 'install' of the day: Full update (~3min)"
-        echo "   Subsequent runs same day: Fast mode with --locked (~1min)"
-        echo ""
-        echo "💡 Tip: Use './dev.sh dev' for fast iteration during development"
         exit 1
         ;;
 esac
