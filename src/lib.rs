@@ -89,13 +89,13 @@ impl Tab {
     /// Retorna o label traduzido para este tab.
     ///
     /// # Nota
-    /// Esta função será útil quando implementarmos i18n completo nas tabs.
-    /// Por enquanto, retorna strings em inglês.
-    pub fn label(&self) -> &'static str {
+    /// Usa o sistema de macro fl! para buscar a tradução correta
+    /// baseada no locale do sistema.
+    pub fn label(&self) -> String {
         match self {
-            Tab::Calendar => "Calendar",
-            Tab::Weather => "Weather",
-            Tab::Timer => "Timer",
+            Tab::Calendar => crate::fl!("calendar"),
+            Tab::Weather => crate::fl!("weather"),
+            Tab::Timer => crate::fl!("timer"),
         }
     }
 }

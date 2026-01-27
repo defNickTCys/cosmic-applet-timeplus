@@ -102,3 +102,16 @@ fmt:
 
 # Full CI pipeline
 ci: check clippy test build-release
+
+# Create release tarball
+dist: build-release
+    rm -rf dist
+    mkdir -p dist/{{applet_name}}
+    cp {{targetdir}}/{{target}}/{{applet_name}} dist/{{applet_name}}/
+    cp -r data dist/{{applet_name}}/
+    cp -r assets dist/{{applet_name}}/
+    cp README.md dist/{{applet_name}}/
+    cp LICENSE dist/{{applet_name}}/
+    cp justfile dist/{{applet_name}}/
+    cd dist && tar -czf {{applet_name}}-{{shell("grep '^version' Cargo.toml | cut -d '\"' -f 2")}}.tar.gz {{applet_name}}
+    @echo "📦 Release tarball created at dist/{{applet_name}}-{{shell("grep '^version' Cargo.toml | cut -d '\"' -f 2")}}.tar.gz"
