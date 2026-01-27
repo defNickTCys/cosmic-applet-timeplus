@@ -88,9 +88,15 @@ mod tests {
 
     #[test]
     fn test_respects_env_var_override() {
-        env::set_var("COSMIC_APPLET_TIMEPLUS_DATA", "/tmp/test-data");
+        // SAFETY: Test function, setting env var before spawning threads
+        unsafe {
+            env::set_var("COSMIC_APPLET_TIMEPLUS_DATA", "/tmp/test-data");
+        }
         let data_dir = get_data_dir();
         assert_eq!(data_dir, Some(PathBuf::from("/tmp/test-data")));
-        env::remove_var("COSMIC_APPLET_TIMEPLUS_DATA");
+        // SAFETY: Test cleanup
+        unsafe {
+            env::remove_var("COSMIC_APPLET_TIMEPLUS_DATA");
+        }
     }
 }

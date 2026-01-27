@@ -8,8 +8,8 @@
 
 use chrono::Timelike;
 use cosmic::{
-    iced::futures::{channel::mpsc, SinkExt, StreamExt},
     iced::Subscription,
+    iced::futures::{SinkExt, StreamExt, channel::mpsc},
     iced_futures::stream,
 };
 use logind_zbus::manager::ManagerProxy;

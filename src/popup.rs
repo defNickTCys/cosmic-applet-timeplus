@@ -11,16 +11,16 @@
 
 use chrono::{DateTime, FixedOffset};
 use cosmic::{
-    applet::{menu_button, padded_control, Context as AppletContext},
+    Element,
+    applet::{Context as AppletContext, menu_button, padded_control},
     cosmic_theme::Spacing,
     iced::widget::column,
     theme,
     widget::{divider, segmented_button, text},
-    Element,
 };
 use icu::locale::Locale;
 
-use crate::{calendar::CalendarState, config::TimeAppletConfig, fl, Message, Tab};
+use crate::{Message, Tab, calendar::CalendarState, config::TimeAppletConfig, fl};
 
 // ============================================================================
 // Popup View Function

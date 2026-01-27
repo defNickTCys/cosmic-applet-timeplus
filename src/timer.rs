@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use cosmic::{
+    Element,
     applet::padded_control,
     cosmic_theme::Spacing,
     iced::{Alignment, Length},
-    widget::{column, container, divider, icon, row, text, Space},
-    Element,
+    widget::{Space, column, container, divider, icon, row, text},
 };
 
 use crate::fl;
-use crate::{icons, Message, Tab};
+use crate::{Message, Tab, icons};
 
 /// Timer tab placeholder view
 pub fn view_timer<'a>() -> Element<'a, Message> {

@@ -11,18 +11,17 @@
 
 use chrono::{DateTime, FixedOffset};
 use cosmic::{
-    applet,
+    Element, applet,
     iced::{
-        widget::{column, row},
         Alignment, Length,
+        widget::{column, row},
     },
-    iced_widget::{horizontal_rule, Column},
+    iced_widget::{Column, horizontal_rule},
     widget::{container, horizontal_space, vertical_space},
-    Element,
 };
 use icu::{
     datetime::{
-        fieldsets, options::TimePrecision, DateTimeFormatter, DateTimeFormatterPreferences,
+        DateTimeFormatter, DateTimeFormatterPreferences, fieldsets, options::TimePrecision,
     },
     locale::preferences::extensions::unicode::keywords::HourCycle,
 };

@@ -3,18 +3,17 @@
 
 use chrono::{Datelike, Days, NaiveDate, Timelike, Weekday};
 use cosmic::{
-    iced::{
-        widget::{column, row},
-        Alignment, Length,
-    },
-    widget::{self, button, container, grid, text, Button, Grid},
     Apply, Element,
+    iced::{
+        Alignment, Length,
+        widget::{column, row},
+    },
+    widget::{self, Button, Grid, button, container, grid, text},
 };
 use icu::{
     datetime::{
-        fieldsets,
+        DateTimeFormatter, DateTimeFormatterPreferences, fieldsets,
         input::{Date, DateTime, Time},
-        DateTimeFormatter, DateTimeFormatterPreferences,
     },
     locale::Locale,
 };

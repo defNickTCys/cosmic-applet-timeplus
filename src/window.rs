@@ -2,25 +2,25 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use chrono::Datelike;
-use cosmic::widget::segmented_button;
 use cosmic::widget::Id;
+use cosmic::widget::segmented_button;
 use cosmic::{
-    app,
+    Element, Task, app,
     applet::cosmic_panel_config::PanelAnchor,
     cctk::sctk::reexports::calloop,
     iced::{
+        Rectangle, Subscription,
         platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup},
-        window, Rectangle, Subscription,
+        window,
     },
     widget::{autosize, button, icon, rectangle_tracker::*},
-    Element, Task,
 };
 use std::sync::LazyLock;
 use tokio::sync::watch;
 
 use crate::config::TimeAppletConfig;
 use cosmic::applet::token::subscription::{
-    activation_token_subscription, TokenRequest, TokenUpdate,
+    TokenRequest, TokenUpdate, activation_token_subscription,
 };
 use icu::locale::Locale;
 
@@ -251,7 +251,9 @@ impl cosmic::Application for Window {
                         exec,
                     });
                 } else {
-                    tracing::warn!("[System] Settings requested but Wayland tx unavailable (not running in panel?)");
+                    tracing::warn!(
+                        "[System] Settings requested but Wayland tx unavailable (not running in panel?)"
+                    );
                 }
                 Task::none()
             }

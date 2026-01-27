@@ -27,10 +27,13 @@ fn main() -> cosmic::iced::Result {
         // Debug mode: show cosmic-applet-timeplus logs, suppress noisy dependencies
         // User can override with RUST_LOG environment variable
         if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var(
-                "RUST_LOG",
-                "cosmic_applet_timeplus=debug,i18n_embed=warn,wgpu=warn",
-            );
+            // SAFETY: Setting RUST_LOG at startup before any threads are spawned
+            unsafe {
+                std::env::set_var(
+                    "RUST_LOG",
+                    "cosmic_applet_timeplus=debug,i18n_embed=warn,wgpu=warn",
+                );
+            }
         }
         tracing_subscriber::fmt::init();
     } else {
