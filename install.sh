@@ -1,49 +1,60 @@
 #!/bin/bash
-# Installation script for cosmic-applet-timeplus
-# Usage: sudo ./install.sh
-
+# Script de instalação standalone para cosmic-applet-timeplus
+# Não requer cargo ou just.
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+APPLET_NAME="cosmic-applet-timeplus"
+DESKTOP_ID="com.system76.CosmicAppletTimePlus"
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then 
-    echo -e "${RED}Error: This script must be run as root${NC}"
-    echo "Usage: sudo ./install.sh"
+# Definir prefixo (padrão /usr se rodado como sudo, ou ~/.local se não)
+if [ "$EUID" -eq 0 ]; then
+    PREFIX="${PREFIX:-/usr}"
+    echo "🔧 Instalando no sistema: $PREFIX"
+else
+    PREFIX="${PREFIX:-$HOME/.local}"
+    echo "👤 Instalando para usuário: $PREFIX"
+fi
+
+BIN_DIR="$PREFIX/bin"
+SHARE_DIR="$PREFIX/share"
+APPS_DIR="$SHARE_DIR/applications"
+ICONS_DIR="$SHARE_DIR/icons/hicolor/scalable/apps"
+SOUNDS_DIR="$SHARE_DIR/cosmic-applet-timeplus/sounds"
+
+# Criar diretórios
+mkdir -p "$BIN_DIR"
+mkdir -p "$APPS_DIR"
+mkdir -p "$ICONS_DIR"
+
+# Instalar binário
+# Tenta encontrar o binário localmente (release tarball) ou em target/release (source)
+if [ -f "$APPLET_NAME" ]; then
+    install -Dm755 "$APPLET_NAME" "$BIN_DIR/$APPLET_NAME"
+elif [ -f "target/release/$APPLET_NAME" ]; then
+    install -Dm755 "target/release/$APPLET_NAME" "$BIN_DIR/$APPLET_NAME"
+else
+    echo "❌ Erro: Binário '$APPLET_NAME' não encontrado."
+    echo "Se está instalando do código-fonte, execute 'cargo build --release' primeiro."
     exit 1
 fi
 
-echo -e "${GREEN}Installing cosmic-applet-timeplus v0.1.0...${NC}"
+# Instalar assets
+install -Dm644 "data/$DESKTOP_ID.desktop" "$APPS_DIR/$DESKTOP_ID.desktop"
+install -Dm644 "data/$DESKTOP_ID.svg" "$ICONS_DIR/$DESKTOP_ID.svg"
+install -Dm644 "data/$DESKTOP_ID-symbolic.svg" "$ICONS_DIR/$DESKTOP_ID-symbolic.svg"
 
-# Install binary
-echo -e "${YELLOW}→${NC} Installing binary to /usr/bin..."
-install -Dm755 cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
-
-# Install desktop file
-echo -e "${YELLOW}→${NC} Installing desktop file..."
-install -Dm644 com.system76.CosmicAppletTimePlus.desktop \
-    /usr/share/applications/com.system76.CosmicAppletTimePlus.desktop
-
-# Install icon
-echo -e "${YELLOW}→${NC} Installing icon..."
-install -Dm644 com.system76.CosmicAppletTimePlus.svg \
-    /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimePlus.svg
-
-# Update icon cache
-if command -v gtk-update-icon-cache &> /dev/null; then
-    echo -e "${YELLOW}→${NC} Updating icon cache..."
-    gtk-update-icon-cache -f -t /usr/share/icons/hicolor/ 2>/dev/null || true
+# Instalar sons
+if [ -d "assets/sounds" ]; then
+    mkdir -p "$SOUNDS_DIR"
+    install -Dm644 assets/sounds/*.ogg "$SOUNDS_DIR/" 2>/dev/null || true
+    # Compatibilidade com wav antigos se existirem
+    install -Dm644 assets/sounds/*.wav "$SOUNDS_DIR/" 2>/dev/null || true
 fi
 
-echo -e "${GREEN}✅ Installation complete!${NC}"
-echo ""
-echo "To use the applet:"
-echo "  1. Restart COSMIC panel: killall cosmic-panel"
-echo "  2. Open COSMIC Settings → Panel → Applets"
-echo "  3. Add 'Time Plus' to your panel"
-echo ""
-echo "For development, see: https://github.com/defNickTCys/cosmic-applet-timeplus"
+# Atualizar cache de ícones (se possível)
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "$SHARE_DIR/icons/hicolor/" 2>/dev/null || true
+fi
+
+echo "✅ Instalação concluída!"
+echo "Reinicie o painel com: killall cosmic-panel"

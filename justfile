@@ -113,5 +113,6 @@ dist: build-release
     cp README.md dist/{{applet_name}}/
     cp LICENSE dist/{{applet_name}}/
     cp justfile dist/{{applet_name}}/
+    cp install.sh dist/{{applet_name}}/
     cd dist && tar -czf {{applet_name}}-{{shell("grep '^version' Cargo.toml | cut -d '\"' -f 2")}}.tar.gz {{applet_name}}
     @echo "📦 Release tarball created at dist/{{applet_name}}-{{shell("grep '^version' Cargo.toml | cut -d '\"' -f 2")}}.tar.gz"
