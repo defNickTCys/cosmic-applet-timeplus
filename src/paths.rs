@@ -52,14 +52,15 @@ fn get_data_dir() -> Option<PathBuf> {
 /// Obtém o caminho de um asset de áudio.
 ///
 /// # Argumentos
-/// * `name` - Nome do arquivo de áudio (ex: "alarm.wav")
+/// * `name` - Nome do arquivo de áudio (ex: "alarm.ogg")
 ///
 /// # Retorno
 /// PathBuf com o caminho completo do arquivo. Retorna fallback local se não encontrado.
 ///
 /// # Exemplo
 /// ```
-/// let alarm_path = get_audio_path("alarm.wav");
+/// use cosmic_applet_timeplus::paths::get_audio_path;
+/// let alarm_path = get_audio_path("alarm.ogg");
 /// println!("Audio at: {:?}", alarm_path);
 /// ```
 pub fn get_audio_path(name: &str) -> PathBuf {
@@ -81,15 +82,21 @@ mod tests {
 
     #[test]
     fn test_get_audio_path_returns_valid_pathbuf() {
-        let path = get_audio_path("alarm.wav");
-        assert!(path.to_str().unwrap().contains("alarm.wav"));
+        let path = get_audio_path("alarm.ogg");
+        assert!(path.to_str().unwrap().contains("alarm.ogg"));
     }
 
     #[test]
     fn test_respects_env_var_override() {
-        env::set_var("COSMIC_APPLET_TIMEPLUS_DATA", "/tmp/test-data");
+        // SAFETY: Test function, setting env var before spawning threads
+        unsafe {
+            env::set_var("COSMIC_APPLET_TIMEPLUS_DATA", "/tmp/test-data");
+        }
         let data_dir = get_data_dir();
         assert_eq!(data_dir, Some(PathBuf::from("/tmp/test-data")));
-        env::remove_var("COSMIC_APPLET_TIMEPLUS_DATA");
+        // SAFETY: Test cleanup
+        unsafe {
+            env::remove_var("COSMIC_APPLET_TIMEPLUS_DATA");
+        }
     }
 }

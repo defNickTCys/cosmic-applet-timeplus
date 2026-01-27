@@ -1110,7 +1110,7 @@ dependencies = [
 
 [[package]]
 name = "cosmic-applet-timeplus"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "chrono",
  "chrono-tz",

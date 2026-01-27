@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use cosmic::{
+    Element,
     applet::padded_control,
     cosmic_theme::Spacing,
     iced::{Alignment, Length},
-    widget::{column, container, divider, icon, row, text, Space},
-    Element,
+    widget::{Space, column, container, divider, icon, row, text},
 };
 
 use crate::fl;
-use crate::Message;
+use crate::{Message, Tab, icons};
 
 /// Timer tab placeholder view
 pub fn view_timer<'a>() -> Element<'a, Message> {
@@ -18,11 +18,11 @@ pub fn view_timer<'a>() -> Element<'a, Message> {
         space_xxs, space_s, ..
     } = cosmic::theme::active().cosmic().spacing;
 
-    let timer_icon: cosmic::widget::Icon = icon::from_name("alarm-symbolic")
+    let timer_icon: cosmic::widget::Icon = icon::from_name(Tab::Timer.icon_name())
         .size(24) // Smaller to match calendar header height
         .into();
 
-    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic").size(16).into();
+    let features_icon: cosmic::widget::Icon = icon::from_name(icons::ui::STARRED).size(16).into();
 
     // Match calendar structure: header + content (2 elements)
     column()

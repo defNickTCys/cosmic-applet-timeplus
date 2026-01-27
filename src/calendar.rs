@@ -3,21 +3,22 @@
 
 use chrono::{Datelike, Days, NaiveDate, Timelike, Weekday};
 use cosmic::{
-    iced::{
-        widget::{column, row},
-        Alignment, Length,
-    },
-    widget::{self, button, container, grid, text, Button, Grid},
     Apply, Element,
+    iced::{
+        Alignment, Length,
+        widget::{column, row},
+    },
+    widget::{self, Button, Grid, button, container, grid, text},
 };
 use icu::{
     datetime::{
-        fieldsets,
+        DateTimeFormatter, DateTimeFormatterPreferences, fieldsets,
         input::{Date, DateTime, Time},
-        DateTimeFormatter, DateTimeFormatterPreferences,
     },
     locale::Locale,
 };
+
+use crate::icons;
 
 // Calendar layout constants
 const CALENDAR_DAYS: usize = 42; // 6 weeks × 7 days
@@ -226,10 +227,10 @@ pub fn view_calendar<'a, T: Timelike>(
     let day_of_week = text::body(weekday_formatter.format(&datetime).to_string());
 
     let month_controls = row![
-        button::icon(widget::icon::from_name("go-previous-symbolic"))
+        button::icon(widget::icon::from_name(icons::navigation::PREVIOUS))
             .padding(8)
             .on_press(CalendarMessage::PreviousMonth),
-        button::icon(widget::icon::from_name("go-next-symbolic"))
+        button::icon(widget::icon::from_name(icons::navigation::NEXT))
             .padding(8)
             .on_press(CalendarMessage::NextMonth)
     ]

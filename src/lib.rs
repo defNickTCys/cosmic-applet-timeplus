@@ -3,6 +3,7 @@
 
 mod calendar; // Calendar module (renamed from time)
 pub mod config;
+pub mod icons; // Centralized icon names (SSoT)
 mod localize;
 mod panel; // Panel UI module
 pub mod paths; // Portable asset location (XDG-compliant)
@@ -38,7 +39,7 @@ pub enum Message {
     // Module envelopes
     Calendar(calendar::CalendarMessage),
 
-    // Notifications (Placeholders for Phase 3.7)
+    // Notifications (Placeholders for Phase 3.9)
     /// Trigger a notification alert with sound
     TriggerNotification {
         message: String,

@@ -2,25 +2,25 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use chrono::Datelike;
-use cosmic::widget::segmented_button;
 use cosmic::widget::Id;
+use cosmic::widget::segmented_button;
 use cosmic::{
-    app,
+    Element, Task, app,
     applet::cosmic_panel_config::PanelAnchor,
     cctk::sctk::reexports::calloop,
     iced::{
+        Rectangle, Subscription,
         platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup},
-        window, Rectangle, Subscription,
+        window,
     },
     widget::{autosize, button, icon, rectangle_tracker::*},
-    Element, Task,
 };
 use std::sync::LazyLock;
 use tokio::sync::watch;
 
-use crate::{config::TimeAppletConfig, fl};
+use crate::config::TimeAppletConfig;
 use cosmic::applet::token::subscription::{
-    activation_token_subscription, TokenRequest, TokenUpdate,
+    TokenRequest, TokenUpdate, activation_token_subscription,
 };
 use icu::locale::Locale;
 
@@ -73,18 +73,18 @@ impl cosmic::Application for Window {
         // Initialize tab model (using segmented_button for tab navigation)
         let mut tab_model = segmented_button::Model::builder()
             .insert(|b| {
-                b.text(fl!("calendar"))
-                    .icon(icon::from_name("com.system76.CosmicAppletTime-symbolic"))
+                b.text(Tab::Calendar.label())
+                    .icon(icon::from_name(Tab::Calendar.icon_name()))
                     .data(Tab::Calendar)
             })
             .insert(|b| {
-                b.text(fl!("weather"))
-                    .icon(icon::from_name("weather-clear-symbolic"))
+                b.text(Tab::Weather.label())
+                    .icon(icon::from_name(Tab::Weather.icon_name()))
                     .data(Tab::Weather)
             })
             .insert(|b| {
-                b.text(fl!("timer"))
-                    .icon(icon::from_name("alarm-symbolic"))
+                b.text(Tab::Timer.label())
+                    .icon(icon::from_name(Tab::Timer.icon_name()))
                     .data(Tab::Timer)
             })
             .build();
@@ -251,7 +251,9 @@ impl cosmic::Application for Window {
                         exec,
                     });
                 } else {
-                    tracing::warn!("[System] Settings requested but Wayland tx unavailable (not running in panel?)");
+                    tracing::warn!(
+                        "[System] Settings requested but Wayland tx unavailable (not running in panel?)"
+                    );
                 }
                 Task::none()
             }
@@ -297,17 +299,17 @@ impl cosmic::Application for Window {
 
                 self.update(Message::Tick)
             }
-            // Notification placeholders (Phase 3.7 - not yet implemented)
+            // Notification placeholders (Phase 3.9 - not yet implemented)
             Message::TriggerNotification { .. } => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::NotificationDismissed => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::NotificationAction(_) => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::TabActivated(entity) => {
