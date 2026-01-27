@@ -39,7 +39,7 @@ pub enum Message {
     // Module envelopes
     Calendar(calendar::CalendarMessage),
 
-    // Notifications (Placeholders for Phase 3.7)
+    // Notifications (Placeholders for Phase 3.9)
     /// Trigger a notification alert with sound
     TriggerNotification {
         message: String,

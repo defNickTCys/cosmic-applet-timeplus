@@ -297,17 +297,17 @@ impl cosmic::Application for Window {
 
                 self.update(Message::Tick)
             }
-            // Notification placeholders (Phase 3.7 - not yet implemented)
+            // Notification placeholders (Phase 3.9 - not yet implemented)
             Message::TriggerNotification { .. } => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::NotificationDismissed => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::NotificationAction(_) => {
-                // TODO: Implement in Phase 3.7
+                // TODO: Implement in Phase 3.9
                 Task::none()
             }
             Message::TabActivated(entity) => {

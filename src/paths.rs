@@ -52,14 +52,15 @@ fn get_data_dir() -> Option<PathBuf> {
 /// Obtém o caminho de um asset de áudio.
 ///
 /// # Argumentos
-/// * `name` - Nome do arquivo de áudio (ex: "alarm.wav")
+/// * `name` - Nome do arquivo de áudio (ex: "alarm.ogg")
 ///
 /// # Retorno
 /// PathBuf com o caminho completo do arquivo. Retorna fallback local se não encontrado.
 ///
 /// # Exemplo
 /// ```
-/// let alarm_path = get_audio_path("alarm.wav");
+/// use cosmic_applet_timeplus::paths::get_audio_path;
+/// let alarm_path = get_audio_path("alarm.ogg");
 /// println!("Audio at: {:?}", alarm_path);
 /// ```
 pub fn get_audio_path(name: &str) -> PathBuf {
@@ -81,8 +82,8 @@ mod tests {
 
     #[test]
     fn test_get_audio_path_returns_valid_pathbuf() {
-        let path = get_audio_path("alarm.wav");
-        assert!(path.to_str().unwrap().contains("alarm.wav"));
+        let path = get_audio_path("alarm.ogg");
+        assert!(path.to_str().unwrap().contains("alarm.ogg"));
     }
 
     #[test]
