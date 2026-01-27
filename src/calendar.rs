@@ -19,6 +19,8 @@ use icu::{
     locale::Locale,
 };
 
+use crate::icons;
+
 // Calendar layout constants
 const CALENDAR_DAYS: usize = 42; // 6 weeks × 7 days
 const DAY_BUTTON_SIZE: f32 = 44.0; // COSMIC HIG standard button size
@@ -226,10 +228,10 @@ pub fn view_calendar<'a, T: Timelike>(
     let day_of_week = text::body(weekday_formatter.format(&datetime).to_string());
 
     let month_controls = row![
-        button::icon(widget::icon::from_name("go-previous-symbolic"))
+        button::icon(widget::icon::from_name(icons::navigation::PREVIOUS))
             .padding(8)
             .on_press(CalendarMessage::PreviousMonth),
-        button::icon(widget::icon::from_name("go-next-symbolic"))
+        button::icon(widget::icon::from_name(icons::navigation::NEXT))
             .padding(8)
             .on_press(CalendarMessage::NextMonth)
     ]

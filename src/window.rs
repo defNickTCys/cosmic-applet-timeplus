@@ -18,7 +18,7 @@ use cosmic::{
 use std::sync::LazyLock;
 use tokio::sync::watch;
 
-use crate::{config::TimeAppletConfig, fl};
+use crate::config::TimeAppletConfig;
 use cosmic::applet::token::subscription::{
     activation_token_subscription, TokenRequest, TokenUpdate,
 };
@@ -73,18 +73,18 @@ impl cosmic::Application for Window {
         // Initialize tab model (using segmented_button for tab navigation)
         let mut tab_model = segmented_button::Model::builder()
             .insert(|b| {
-                b.text(fl!("calendar"))
-                    .icon(icon::from_name("com.system76.CosmicAppletTime-symbolic"))
+                b.text(Tab::Calendar.label())
+                    .icon(icon::from_name(Tab::Calendar.icon_name()))
                     .data(Tab::Calendar)
             })
             .insert(|b| {
-                b.text(fl!("weather"))
-                    .icon(icon::from_name("weather-clear-symbolic"))
+                b.text(Tab::Weather.label())
+                    .icon(icon::from_name(Tab::Weather.icon_name()))
                     .data(Tab::Weather)
             })
             .insert(|b| {
-                b.text(fl!("timer"))
-                    .icon(icon::from_name("alarm-symbolic"))
+                b.text(Tab::Timer.label())
+                    .icon(icon::from_name(Tab::Timer.icon_name()))
                     .data(Tab::Timer)
             })
             .build();

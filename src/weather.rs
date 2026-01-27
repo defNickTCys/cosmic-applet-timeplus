@@ -10,7 +10,7 @@ use cosmic::{
 };
 
 use crate::fl;
-use crate::{Message, Tab};
+use crate::{icons, Message, Tab};
 
 /// Weather tab placeholder view
 pub fn view_weather<'a>() -> Element<'a, Message> {
@@ -22,7 +22,7 @@ pub fn view_weather<'a>() -> Element<'a, Message> {
         .size(24) // Smaller to match calendar header height
         .into();
 
-    let features_icon: cosmic::widget::Icon = icon::from_name("starred-symbolic").size(16).into();
+    let features_icon: cosmic::widget::Icon = icon::from_name(icons::ui::STARRED).size(16).into();
 
     // Match calendar structure: header + content (2 elements)
     column()

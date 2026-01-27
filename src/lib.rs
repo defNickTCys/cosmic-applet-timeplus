@@ -3,6 +3,7 @@
 
 mod calendar; // Calendar module (renamed from time)
 pub mod config;
+pub mod icons; // Centralized icon names (SSoT)
 mod localize;
 mod panel; // Panel UI module
 pub mod paths; // Portable asset location (XDG-compliant)
