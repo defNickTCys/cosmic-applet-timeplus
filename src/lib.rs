@@ -5,6 +5,7 @@ mod calendar; // Calendar module (renamed from time)
 pub mod config;
 mod localize;
 mod panel; // Panel UI module
+pub mod paths; // Portable asset location (XDG-compliant)
 mod popup; // Popup UI module
 mod subscriptions; // Subscription management (time, timezone, wake-from-sleep)
 mod time; // Panel time formatting module (new)
@@ -66,6 +67,36 @@ pub enum Tab {
     Calendar,
     Weather,
     Timer,
+}
+
+impl Tab {
+    /// Retorna o nome do ícone simbólico para este tab.
+    ///
+    /// Estes nomes seguem o padrão FreeDesktop Icon Naming Specification
+    /// e são automaticamente resolvidos pelo sistema de temas do COSMIC.
+    ///
+    /// # Retorno
+    /// String estática com o nome do ícone (ex: "office-calendar-symbolic")
+    pub fn icon_name(&self) -> &'static str {
+        match self {
+            Tab::Calendar => "office-calendar-symbolic",
+            Tab::Weather => "weather-clear-symbolic",
+            Tab::Timer => "alarm-symbolic",
+        }
+    }
+
+    /// Retorna o label traduzido para este tab.
+    ///
+    /// # Nota
+    /// Esta função será útil quando implementarmos i18n completo nas tabs.
+    /// Por enquanto, retorna strings em inglês.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Tab::Calendar => "Calendar",
+            Tab::Weather => "Weather",
+            Tab::Timer => "Timer",
+        }
+    }
 }
 
 // ============================================================================
