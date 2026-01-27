@@ -33,7 +33,7 @@ build-release *args: (build-debug '--release' args)
 
 # Run the applet in development mode
 run *args:
-    COSMIC_APPLET_TIMEPLUS_DATA={{justfile_directory()}}/assets cargo run {{args}}
+    COSMIC_APPLET_TIMEPLUS_DATA="{{justfile_directory()}}/assets" cargo run {{args}}
 
 # Run tests
 test:
@@ -53,6 +53,10 @@ install-desktop:
 # Install icon
 install-icon:
     install -Dm644 data/{{desktop_id}}.svg {{iconsdir}}/{{desktop_id}}.svg
+    install -Dm644 data/{{desktop_id}}-symbolic.svg {{iconsdir}}/{{desktop_id}}-symbolic.svg
+    @if command -v gtk-update-icon-cache > /dev/null 2>&1; then \
+        gtk-update-icon-cache -f -t {{sharedir}}/icons/hicolor/ 2>/dev/null || true; \
+    fi
 
 # Install audio assets (if they exist)
 install-sounds:
@@ -73,6 +77,7 @@ uninstall:
     rm -f {{bindir}}/{{applet_name}}
     rm -f {{applicationsdir}}/{{desktop_id}}.desktop
     rm -f {{iconsdir}}/{{desktop_id}}.svg
+    rm -f {{iconsdir}}/{{desktop_id}}-symbolic.svg
     rm -rf {{soundsdir}}
 
 # Uninstall from user directory
