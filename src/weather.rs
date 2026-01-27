@@ -10,7 +10,7 @@ use cosmic::{
 };
 
 use crate::fl;
-use crate::Message;
+use crate::{Message, Tab};
 
 /// Weather tab placeholder view
 pub fn view_weather<'a>() -> Element<'a, Message> {
@@ -18,7 +18,7 @@ pub fn view_weather<'a>() -> Element<'a, Message> {
         space_xxs, space_s, ..
     } = cosmic::theme::active().cosmic().spacing;
 
-    let weather_icon: cosmic::widget::Icon = icon::from_name("weather-clear-symbolic")
+    let weather_icon: cosmic::widget::Icon = icon::from_name(Tab::Weather.icon_name())
         .size(24) // Smaller to match calendar header height
         .into();
 

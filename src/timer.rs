@@ -10,7 +10,7 @@ use cosmic::{
 };
 
 use crate::fl;
-use crate::Message;
+use crate::{Message, Tab};
 
 /// Timer tab placeholder view
 pub fn view_timer<'a>() -> Element<'a, Message> {
@@ -18,7 +18,7 @@ pub fn view_timer<'a>() -> Element<'a, Message> {
         space_xxs, space_s, ..
     } = cosmic::theme::active().cosmic().spacing;
 
-    let timer_icon: cosmic::widget::Icon = icon::from_name("alarm-symbolic")
+    let timer_icon: cosmic::widget::Icon = icon::from_name(Tab::Timer.icon_name())
         .size(24) // Smaller to match calendar header height
         .into();
 
