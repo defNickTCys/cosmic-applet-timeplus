@@ -1,8 +1,8 @@
 # Estado de Desenvolvimento - cosmic-applet-timeplus
 
-**Versão Atual**: v0.1.3  
+**Versão Atual**: v0.1.4  
 **Status**: Release publicada e estável  
-**Última Atualização**: 2026-01-14  
+**Última Atualização**: 2026-01-27 
 
 ---
 
@@ -112,7 +112,7 @@ impl Application for Window {
 
 ---
 
-### 4. Centralized Validation (Fase 3.6)
+### 4. Centralized Validation (Fase 3.7)
 
 **✅ O que funcionou**:
 ```rust
@@ -130,6 +130,14 @@ impl TimeAppletConfig {
 // window.rs - uso limpo
 if config.should_show_seconds() { /* ... */ }
 ```
+
+### 5. Single Source of Truth (SSoT) - Phase 3.8
+
+**✅ O que funcionou**:
+- Módulo `icons.rs` com constantes centralizadas
+- `Tab` enum com métodos `icon_name()` e `label()`
+- Zero hardcoded strings em código UI
+- Formato `.ogg` (FreeDesktop standard)
 
 **Lição**: Validações pertencem ao módulo `config.rs`, não ao `window.rs`.
 
@@ -161,7 +169,7 @@ if config.should_show_seconds() { /* ... */ }
 
 ---
 
-## 🎯 Próximos Passos: Fase 3.7 (System Wiring & Notifications)
+## 🎯 Próximos Passos: Fase 3.9 (System Wiring & Notifications)
 
 ### Baseado nos Learnings
 

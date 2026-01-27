@@ -138,30 +138,22 @@ Located at the absolute top of the container.
 
 ---
 
-## 🆕 What's New in v0.1.3
-
-### 🔧 Command-Line Interface
-- **Debug mode**: `cosmic-applet-timeplus --debug` with structured logging
-- **Custom config**: `--config <path>` for testing configurations
-- Smart log filtering (`RUST_LOG`) - eliminates dependency noise
-
-### 📊 Production-Grade Observability
-- **Initialization tracing**: Panel position, locale, timezone, config snapshot
-- **User interaction logs**: Categorized by `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`
-- **Enriched context**: Calendar operations show full dates (2026-01-21)
-- **Proper log levels**: INFO for UI events, DEBUG for details, WARN for recoverable errors
-
-### 🏗️ Architectural Improvements
-- **Dependency Injection**: Configuration passed via `Flags` pattern
-- **Immutable positioning**: Panel anchor captured once at init (performance)
-- **Centralized validation**: Logic moved from `window.rs` to `config.rs` and `time.rs`
-- **Graceful degradation**: Wayland connection errors handled without crashes
-
-### 🐛 Fixes
-- **i18n cleanup**: Removed duplicate keys from 61 language files (122 lines)
-- **Error handling**: Changed Wayland errors from ERROR to WARN with context
-
-**16 atomic commits** | See [CHANGELOG.md](CHANGELOG.md#013---2026-01-07) for full details
+## 🆕 What's New in v0.1.4
+### 🎯 Single Source of Truth (SSoT) - Phase 3.8
+- **Centralized Icons**: New `icons.rs` module for all icon names
+- **Zero Hardcoded Strings**: 100% elimination of hardcoded strings in UI
+- **Tab Methods**: `Tab::icon_name()` and `Tab::label()` for consistency
+- **Audio Standard**: `.ogg` format (FreeDesktop specification)
+### 🏗️ Portability & Build System
+- **XDG-Compliant**: `paths.rs` for portable asset location
+- **justfile**: System76-compliant build system
+- **Flexible Installation**: Support for system (`/usr`) and user (`~/.local`)
+- **Pre-commit Hooks**: Automatic fmt + clippy validation
+### 📦 Installation Improvements
+- Icon cache auto-update
+- Symbolic icon variant for theme integration
+- Comprehensive INSTALL.md documentation
+**3 atomic commits** | Eliminated 12 hardcoded strings | See [CHANGELOG.md](CHANGELOG.md#014) for full details
 
 ---
 
@@ -345,23 +337,16 @@ The goal is to demonstrate how advanced AI tools can accelerate modern desktop d
 - libcosmic dependencies
 
 ### From Source
-
 ```bash
 # Clone the repository
 git clone https://github.com/defNickTCys/cosmic-applet-timeplus
 cd cosmic-applet-timeplus
-
-# Build release binary
-cargo build --release
-
-# Install to system
-sudo install -Dm755 target/release/cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
-sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.desktop /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
-sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
-
+# Install using justfile (recommended)
+just install  # User installation (~/.local)
+# OR
+sudo -E env PATH=$PATH just install  # System installation (/usr)
 # Restart COSMIC panel
 killall cosmic-panel
-```
 
 **Note**: For development, use `./dev.sh dev` for fast iteration without system installation.
 
@@ -557,7 +542,7 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Fix** Real-time configuration updates (show_seconds, military_time)
 - [x] **Optimize** Date format to use `MDT::medium` for better space usage
 
-### Phase 3.8: UI Architecture & Separation ✅ *v0.1.2*
+### Phase 3.6: UI Architecture & Separation ✅ *v0.1.2*
 - [x] **Create** Core UI Layer (`panel.rs`, `popup.rs`)
 - [x] **Extract** panel layout logic from `time.rs` to `panel.rs` (195 lines)
 - [x] **Extract** popup structure from `window.rs` to `popup.rs` (83 lines)
@@ -567,7 +552,7 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Preserve** all visual logic (zero UI/UX changes)
 - [x] **Maintain** zero compilation warnings and clippy errors
 
-### Phase 3.6: Infrastructure Refactoring & Observability ✅ *v0.1.3*
+### Phase 3.7: Infrastructure Refactoring & Observability ✅ *v0.1.3*
 - [x] **CLI Foundation** - `clap` with `--debug` and `--config` arguments
 - [x] **Observability** - Comprehensive tracing (`[Init]`, `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`)
 - [x] **Dependency Injection** - Config passed via `Flags` pattern
@@ -577,7 +562,13 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Graceful Errors** - Wayland failures handled without crashes
 - [x] **15 atomic commits** with 100% test validation
 
-### Phase 3.7: System Wiring & Notifications 🔔 *NEXT*
+### Phase 3.8: Icon System & Build System ✅ *v0.1.4*
+- [x] **Single Source of Truth (SSoT)** - New `icons.rs` module for all icon names
+- [x] **Zero Hardcoded Strings** - Eliminated 12 hardcoded strings in UI
+- [x] **Tab Methods** - `Tab::icon_name()` and `Tab::label()` for consistency
+- [x] **Audio Standard** - `.ogg` format (FreeDesktop specification)
+
+### Phase 3.9: System Wiring & Notifications 🔔 *NEXT*
 - [ ] Basic notification system via `notify-rust`
 - [ ] Timer countdown completion notifications
 - [ ] Calendar date reminder notifications
