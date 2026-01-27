@@ -23,7 +23,7 @@
 
 ## 📸 Capturas de Tela
 
-*Todas as capturas de tela da **v0.1.3** executando no COSMIC Desktop (Fedora Linux 43)*
+*Todas as capturas de tela da **v0.1.4** executando no COSMIC Desktop (Fedora Linux 43)*
 
 <details>
 <summary>🔲 Sistema de Navegação por Abas</summary>
@@ -138,30 +138,26 @@ Localizada no topo absoluto do container.
 
 ---
 
-## 🆕 Novidades da v0.1.3
+## 🆕 Novidades da v0.1.4
 
-### 🔧 Interface de Linha de Comando
-- **Modo debug**: `cosmic-applet-timeplus --debug` com logging estruturado
-- **Config personalizada**: `--config <caminho>` para testar configurações
-- Filtragem inteligente de logs (`RUST_LOG`) - elimina ruído de dependências
+### 🎯 Fonte Única de Verdade (SSoT) - Fase 3.8
+- **Ícones Centralizados**: Novo módulo `icons.rs` para todos os nomes de ícones
+- **Zero Strings Hardcoded**: Eliminação 100% de strings hardcoded na UI
+- **Métodos de Aba**: `Tab::icon_name()` e `Tab::label()` para consistência
+- **Padrão de Áudio**: Formato `.ogg` (Especificação FreeDesktop)
 
-### 📊 Observabilidade Profissional
-- **Rastreamento de inicialização**: Posição do painel, locale, timezone, snapshot da config
-- **Logs de interação**: Categorizados por `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`
-- **Contexto enriquecido**: Operações de calendário mostram datas completas (2026-01-21)
-- **Níveis de log adequados**: INFO para eventos de UI, DEBUG para detalhes, WARN para erros recuperáveis
+### 🏗️ Portabilidade & Sistema de Build
+- **Compatível com XDG**: `paths.rs` para localização portátil de assets
+- **justfile**: Sistema de build compatível com System76
+- **Instalação Flexível**: Suporte para sistema (`/usr`) e usuário (`~/.local`)
+- **Hooks Pre-commit**: Validação automática fmt + clippy
 
-### 🏗️ Melhorias Arquiteturais
-- **Injeção de Dependências**: Configuração passada via padrão `Flags`
-- **Posicionamento imutável**: Âncora do painel capturada uma vez na inicialização (performance)
-- **Validação centralizada**: Lógica movida de `window.rs` para `config.rs` e `time.rs`
-- **Degradação graciosa**: Erros de conexão Wayland tratados sem crashes
+### 📦 Melhorias de Instalação
+- Atualização automática do cache de ícones
+- Variante de ícone simbólico para integração com temas
+- Documentação abrangente em INSTALL.md
 
-### 🐛 Correções
-- **Limpeza i18n**: Removidas chaves duplicadas de 61 arquivos de idioma (122 linhas)
-- **Tratamento de erros**: Erros Wayland mudados de ERROR para WARN com contexto
-
-**16 commits atômicos** | Veja [CHANGELOG.md](CHANGELOG.md#013---2026-01-07) para detalhes completos
+**3 commits atômicos** | Eliminadas 12 strings hardcoded | Veja [CHANGELOG.md](CHANGELOG.md#014) para detalhes completos
 
 ---
 
@@ -345,18 +341,17 @@ O objetivo é demonstrar como ferramentas avançadas de IA podem acelerar o dese
 
 ### A Partir do Código-fonte
 
+### A Partir do Código-fonte
+
 ```bash
 # Clone o repositório
 git clone https://github.com/defNickTCys/cosmic-applet-timeplus
 cd cosmic-applet-timeplus
 
-# Compile o binário release
-cargo build --release
-
-# Instale no sistema
-sudo install -Dm755 target/release/cosmic-applet-timeplus /usr/bin/cosmic-applet-timeplus
-sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.desktop /usr/share/applications/com.system76.CosmicAppletTimeplus.desktop
-sudo install -Dm644 data/com.system76.CosmicAppletTimeplus.svg /usr/share/icons/hicolor/scalable/apps/com.system76.CosmicAppletTimeplus.svg
+# Instale usando justfile (recomendado)
+just install  # Instalação de usuário (~/.local)
+# OU
+sudo -E env PATH=$PATH just install  # Instalação de sistema (/usr)
 
 # Reinicie o painel COSMIC
 killall cosmic-panel
@@ -555,27 +550,13 @@ nano i18n/pt-BR/cosmic_applet_timeplus.ftl
 - [x] **Corrigir** atualizações de configuração em tempo real (show_seconds, military_time)
 - [x] **Otimizar** formato de data para usar `MDT::medium` para melhor aproveitamento de espaço
 
-### Fase 3.8: Arquitetura UI & Separação ✅ *v0.1.2*
-- [x] **Criar** Camada Core UI (`panel.rs`, `popup.rs`)
-- [x] **Extrair** lógica de layout do painel de `time.rs` para `panel.rs` (195 linhas)
-- [x] **Extrair** estrutura do popup de `window.rs` para `popup.rs` (83 linhas)
-- [x] **Purificar** `time.rs` - TODAS dependências de UI removidas (84 linhas, -62%)
-- [x] **Simplificar** `window.rs` - orquestrador puro (334 linhas, -9%)
-- [x] **Alcançar** 100% separação de responsabilidades (UI, Orquestração, Utilidades, Features)
-- [x] **Preservar** toda lógica visual (zero mudanças de UI/UX)
-- [x] **Manter** zero warnings de compilação e erros de clippy
+### Fase 3.8: Sistema de Ícones & Build ✅ *v0.1.4*
+- [x] **Fonte Única de Verdade (SSoT)** - Novo módulo `icons.rs` para todos os nomes de ícones
+- [x] **Zero Strings Hardcoded** - Eliminadas 12 strings hardcoded na UI
+- [x] **Métodos de Aba** - `Tab::icon_name()` e `Tab::label()` para consistência
+- [x] **Padrão de Áudio** - Formato `.ogg` (Especificação FreeDesktop)
 
-### Fase 3.6: Refatoração de Infraestrutura & Observabilidade ✅ *v0.1.3*
-- [x] **Fundação CLI** - `clap` com argumentos `--debug` e `--config`
-- [x] **Observabilidade** - Tracing abrangente (`[Init]`, `[UI]`, `[Navigation]`, `[Calendar]`, `[System]`)  
-- [x] **Injeção de Dependências** - Config passada via padrão `Flags`
-- [x] **Lógica Centralizada** - Validação em `config.rs`, parsing em `time.rs`
-- [x] **Posicionamento Imutável** - Âncora do painel capturada uma vez na init
-- [x] **Limpeza i18n** - Duplicatas removidas de 61 arquivos
-- [x] **Erros Graciosos** - Falhas Wayland tratadas sem crashes
-- [x] **16 commits atômicos** com 100% validação de testes
-
-### Fase 3.7: Integração de Sistema & Notificações 🔔 *PRÓXIMA*
+### Fase 3.9: Integração de Sistema & Notificações 🔔 *PRÓXIMA*
 - [ ] Sistema básico de notificações via `notify-rust`
 - [ ] Notificações de conclusão de contagem do timer
 - [ ] Notificações de lembretes de datas do calendário

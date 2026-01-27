@@ -562,7 +562,7 @@ nano i18n/{language}/cosmic_applet_timeplus.ftl
 - [x] **Graceful Errors** - Wayland failures handled without crashes
 - [x] **15 atomic commits** with 100% test validation
 
-### Phase 3.8: Icon System & Build System ✅ *v0.1.4*
+### Phase 3.8: SSoT & Portability ✅ *v0.1.4*
 - [x] **Single Source of Truth (SSoT)** - New `icons.rs` module for all icon names
 - [x] **Zero Hardcoded Strings** - Eliminated 12 hardcoded strings in UI
 - [x] **Tab Methods** - `Tab::icon_name()` and `Tab::label()` for consistency
